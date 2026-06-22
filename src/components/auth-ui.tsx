@@ -1,6 +1,11 @@
 'use client'
 
-/** Shared form field + Google icon used by the login and signup screens. */
+/**
+ * Shared form field + Google icon used by the login and signup screens.
+ * Styled in the editorial "bridge" aesthetic — ruled (underlined) inputs on
+ * cream, via the `.auth-input` / `.auth-label` classes in globals.css. These
+ * screens are the only consumers, so the styling lives here safely.
+ */
 
 export function Field({
   label,
@@ -19,7 +24,7 @@ export function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-xs font-medium text-muted">{label}</span>
+      <span className="auth-label mb-2 block">{label}</span>
       <input
         type={type}
         value={value}
@@ -27,7 +32,7 @@ export function Field({
         placeholder={placeholder}
         autoComplete={autoComplete}
         required
-        className="w-full rounded-xl border border-border bg-panel px-4 py-3 text-sm text-foreground outline-none transition-colors placeholder:text-muted/60 focus:border-[var(--accent)]"
+        className="auth-input"
       />
     </label>
   )

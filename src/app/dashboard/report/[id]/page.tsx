@@ -16,7 +16,7 @@ export default async function ReportPage({
   // RLS ("Users read own profiles") restricts this to the owner.
   const { data: profile } = await supabase
     .from('aesthetic_profiles')
-    .select('id, dna, share_slug, created_at')
+    .select('id, dna, share_slug, created_at, image_urls')
     .eq('id', id)
     .single()
 
@@ -39,6 +39,7 @@ export default async function ReportPage({
         dna={profile.dna as AestheticDna}
         shareSlug={profile.share_slug}
         createdAt={profile.created_at}
+        imageUrls={profile.image_urls as string[] | null}
       />
     </div>
   )

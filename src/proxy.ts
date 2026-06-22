@@ -63,6 +63,11 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Run on everything except static assets and image optimization.
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
+  // Run on everything except API routes, static assets and image optimization.
+  // API routes are excluded because reconstructing the request here
+  // (NextResponse.next({ request })) re-buffers and truncates large request
+  // bodies, so request.formData() fails on multi-megabyte multipart uploads in
+  // handlers like /api/aesthetic-dna. API routes perform their own auth via
+  // supabase.auth.getUser(), so the proxy isn't needed on them.
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
 }

@@ -4,6 +4,22 @@ import { useState } from 'react'
 import { Check, Copy, Sparkles } from 'lucide-react'
 import type { AestheticDna } from '@/lib/aesthetic-dna'
 
+const MONTHS = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+] as const
+
+/**
+ * Locale- and timezone-independent date formatter, e.g. "Jun 22, 2026".
+ * Uses UTC getters so the server and client render identical output,
+ * avoiding the hydration mismatch that toLocaleDateString() caused.
+ */
+function formatReportDate(date: string): string {
+  const d = new Date(date)
+  if (Number.isNaN(d.getTime())) return ''
+  return `${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCFullYear()}`
+}
+
 /**
  * The centrepiece. Renders an Aesthetic DNA profile as a premium dark card.
  * Used by both the authenticated report page and the public share page.
@@ -14,10 +30,12 @@ export function DnaReport({
   dna,
   shareSlug,
   createdAt,
+  imageUrls,
 }: {
   dna: AestheticDna
   shareSlug?: string | null
   createdAt?: string
+  imageUrls?: string[] | null
 }) {
   return (
     <div className="mx-auto w-full max-w-2xl">
@@ -64,6 +82,24 @@ export function DnaReport({
               ))}
             </div>
           </Section>
+
+          {/* Source material */}
+          {imageUrls && imageUrls.length > 0 && (
+            <Section title="Source material">
+              <div className="flex gap-2">
+                {imageUrls.slice(0, 4).map((url, i) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    key={`${url}-${i}`}
+                    src={url}
+                    alt=""
+                    className="aspect-square w-full flex-1 rounded object-cover"
+                    style={{ maxWidth: 120 }}
+                  />
+                ))}
+              </div>
+            </Section>
+          )}
 
           {/* Trait pills */}
           <Section title="Identity traits">
@@ -147,13 +183,7 @@ export function DnaReport({
             Refined with Aesthete
           </div>
           {createdAt && (
-            <span className="text-xs text-muted">
-              {new Date(createdAt).toLocaleDateString(undefined, {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-              })}
-            </span>
+            <span className="text-xs text-muted">{formatReportDate(createdAt)}</span>
           )}
         </div>
       </div>

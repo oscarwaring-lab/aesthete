@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Aesthete — Visual identity for the deliberate creator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --cream:    #faf9f5;
+    --cream-2:  #f3f1ea;
+    --cream-3:  #ece8de;
+    --ink:      #111110;
+    --ink-2:    #2a2925;
+    --ink-mid:  #6b6960;
+    --ink-low:  #9c9a94;
+    --rule:     #dddad0;
+
+    --prussian:       #1E3A5F;
+    --prussian-mid:   #2C4E7A;
+    --prussian-light: #3D6699;
+    --prussian-pale:  #dde5f0;
+
+    /*
+     * THE DNA PALETTE.
+     * Every colour that appears anywhere below the strand is pulled
+     * from exactly these values. Nothing new is ever introduced.
+     * The reward is recognition — "that amber is the same amber."
+     */
+    --dna-amber:   #C4933A;
+    --dna-ochre:   #D4934E;
+    --dna-clay:    #C4834A;
+    --dna-umber:   #9B6A38;
+    --dna-sage:    #7A9870;
+    --dna-moss:    #5A7A58;
+    --dna-rose:    #C4886A;
+    --dna-blush:   #D4A898;
+    --dna-slate:   #8A9898;
+    --dna-lilac:   #B8AEC8;
+    --dna-wheat:   #E8D4B4;
+
+    --serif: 'Playfair Display', Georgia, serif;
+    --sans:  'Inter', -apple-system, 'Helvetica Neue', sans-serif;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body {
+    background: var(--cream);
+    color: var(--ink);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  ::selection { background: rgba(30,58,95,0.14); }
+  a { text-decoration:none; color:inherit; }
+
+  /* ─── Keyframes ───────────────────────────────────────────── */
+  @keyframes fadeIn   { from{opacity:0} to{opacity:1} }
+  @keyframes revealUp { from{opacity:0;transform:translateY(28px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes paintIn  { from{opacity:0;transform:scale(0.97) rotate(-1.2deg)} to{opacity:1;transform:scale(1) rotate(0deg)} }
+  @keyframes dnaRise  { from{transform:scaleY(0);opacity:0} to{transform:scaleY(1);opacity:1} }
+  @keyframes shimmer  { 0%,100%{opacity:.65} 50%{opacity:1} }
+  @keyframes floatIn  { from{opacity:0;transform:translateX(-10px)} to{opacity:1;transform:translateX(0)} }
+  @keyframes organicDrift {
+    0%{transform:translate(0,0) scale(1) rotate(0deg)}
+    33%{transform:translate(12px,-8px) scale(1.02) rotate(0.4deg)}
+    66%{transform:translate(-6px,10px) scale(0.99) rotate(-0.3deg)}
+    100%{transform:translate(0,0) scale(1) rotate(0deg)}
+  }
+  /* Colour dots in the resolution fade up gently when revealed */
+  @keyframes dotIn { from{opacity:0;transform:scale(0)} to{opacity:1;transform:scale(1)} }
+
+  @media (prefers-reduced-motion:reduce) {
+    *,*::before,*::after { animation-duration:.01ms !important }
+  }
+
+  /* ─── Nav ──────────────────────────────────────────────────── */
+  header { position:fixed; inset:0 0 auto 0; z-index:100; }
+  nav { display:flex; align-items:center; justify-content:space-between; padding:28px 52px; }
+  .wordmark { font-family:var(--serif); font-size:17px; font-weight:500; letter-spacing:.01em; color:var(--ink); }
+  .nav-center { display:flex; gap:36px; }
+  .nav-center a { font-size:12px; font-weight:400; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-mid); transition:color .2s; }
+  .nav-center a:hover { color:var(--ink); }
+  .nav-cta { font-size:12px; font-weight:500; letter-spacing:.08em; text-transform:uppercase; color:var(--prussian); border-bottom:1px solid var(--prussian); padding-bottom:1px; transition:opacity .2s; }
+  .nav-cta:hover { opacity:.5; }
+
+  /* ─── Hero — TWO COLOURS ONLY. Restraint before the reveal. ── */
+  .hero {
+    min-height: 100vh; padding: 0 52px;
+    display: grid; grid-template-rows: 1fr auto;
+    position: relative; overflow: hidden;
+  }
+  .hero-painting {
+    position:absolute; top:-0.1em; right:-0.05em;
+    font-family:var(--serif); font-size:clamp(300px,40vw,580px);
+    font-weight:600; font-style:italic; line-height:1;
+    color:var(--prussian); opacity:0;
+    pointer-events:none; user-select:none;
+    animation:paintIn 1.5s cubic-bezier(0.16,1,0.3,1) .2s forwards;
+  }
+  .hero-painting::after { content:attr(data-l); position:absolute; inset:0; color:transparent; -webkit-text-stroke:1.5px var(--prussian); opacity:.18; }
+  .hero-grain {
+    position:absolute; inset:0; pointer-events:none; opacity:.022;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size:200px 200px;
+  }
+  .hero-content { position:relative; z-index:2; display:flex; flex-direction:column; justify-content:flex-end; padding-bottom:64px; padding-top:150px; }
+  .exhibition-label { display:flex; align-items:center; gap:14px; margin-bottom:36px; animation:floatIn .8s cubic-bezier(0.16,1,0.3,1) .45s both; }
+  .exhibition-label .tick { width:24px; height:1px; background:var(--prussian-mid); }
+  .exhibition-label span { font-size:10.5px; font-weight:500; letter-spacing:.24em; text-transform:uppercase; color:var(--prussian-mid); }
+  .hero-statement { max-width:840px; animation:revealUp 1.1s cubic-bezier(0.16,1,0.3,1) .5s both; }
+  .hero-statement h1 { font-family:var(--serif); font-size:clamp(54px,7.8vw,110px); font-weight:500; line-height:.97; letter-spacing:-.025em; color:var(--ink); }
+  .hero-statement h1 .it  { font-style:italic; }
+  .hero-statement h1 .ind { display:block; padding-left:clamp(48px,6vw,96px); }
+  .hero-footer { position:relative; z-index:2; display:grid; grid-template-columns:1fr 1fr; gap:48px; align-items:end; padding:44px 0 56px; border-top:1px solid var(--rule); animation:revealUp 1s cubic-bezier(0.16,1,0.3,1) .7s both; }
+  .hero-footer p { font-size:16px; line-height:1.82; color:var(--ink-mid); max-width:460px; }
+  .hero-footer-right { display:flex; flex-direction:column; align-items:flex-end; gap:14px; }
+  .btn-prussian { display:inline-flex; align-items:center; gap:10px; padding:13px 28px; background:var(--prussian); color:var(--cream); font-family:var(--sans); font-size:12px; font-weight:500; letter-spacing:.1em; text-transform:uppercase; border:none; border-radius:0; cursor:pointer; transition:background .25s; }
+  .btn-prussian:hover { background:var(--prussian-mid); }
+  .hero-footer-right .note { font-size:11px; color:var(--ink-low); letter-spacing:.06em; }
+
+  /* ─── DNA Installation — THE SOURCE. Full chromatic explosion. ── */
+  .dna-installation {
+    background: var(--cream-2);
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+    padding: 80px 52px 68px;
+    position: relative;
+  }
+  .installation-meta { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:48px; }
+  .install-label { font-size:10.5px; font-weight:500; letter-spacing:.22em; text-transform:uppercase; color:var(--prussian-mid); }
+  .install-caption { max-width:300px; font-size:13px; line-height:1.72; color:var(--ink-mid); text-align:right; }
+  .dna-object { display:flex; align-items:flex-end; gap:4px; height:148px; position:relative; }
+  .dna-object span { flex:1; max-width:32px; border-radius:2px 2px 0 0; transform-origin:bottom; animation:dnaRise .7s cubic-bezier(0.16,1,0.3,1) both, shimmer 4s ease-in-out infinite; }
+  .dna-base { position:absolute; bottom:-1px; left:0; right:0; height:1px; background:var(--rule); }
+  .installation-title { margin-top:22px; display:flex; justify-content:space-between; align-items:baseline; border-top:1px solid var(--rule); padding-top:14px; }
+  .installation-title h2 { font-family:var(--serif); font-size:21px; font-weight:400; font-style:italic; color:var(--ink); }
+  .installation-title p { font-size:12px; color:var(--ink-low); letter-spacing:.1em; }
+
+  /*
+   * ═══════════════════════════════════════════════════════════
+   * MOVEMENT 3 — THE LEAK.
+   * Below the strand, its colours begin to appear. Subtle.
+   * Noticeable on a second look. Every value pulled from --dna-*.
+   * ═══════════════════════════════════════════════════════════
+   */
+
+  /* ─── Feature gallery ──────────────────────────────────────── */
+  .feature-gallery { padding:0 52px; }
+  .feature-entry {
+    display:grid; grid-template-columns:120px 1fr 360px;
+    gap:64px; padding:72px 0;
+    border-bottom:1px solid var(--rule);
+    align-items:start; position:relative;
+    opacity:0; transform:translateY(20px);
+    transition:opacity .75s cubic-bezier(0.16,1,0.3,1), transform .75s cubic-bezier(0.16,1,0.3,1);
+  }
+  .feature-entry.visible { opacity:1; transform:translateY(0); }
+  .feature-entry:first-child { border-top:1px solid var(--rule); }
+
+  /*
+   * The feature number now carries a DNA colour — but only on its
+   * left border accent, and only faintly. Each feature draws a
+   * different strand colour, assigned via inline style below.
+   */
+  .feat-num {
+    font-family:var(--serif); font-size:clamp(52px,6vw,80px);
+    font-weight:400; line-height:1; letter-spacing:-.03em;
+    color:var(--rule); padding-top:4px;
+    position:relative;
+    transition:color .4s;
+  }
+  /* A small colour tick beside each number — the leak made visible */
+  .feat-num::before {
+    content:'';
+    position:absolute;
+    left:-22px; top:14px;
+    width:6px; height:6px;
+    border-radius:50%;
+    background:var(--leak, transparent);
+    opacity:0;
+    transition:opacity .6s ease;
+  }
+  .feature-entry.visible .feat-num::before { opacity:0.85; }
+  .feature-entry:hover .feat-num { color:var(--leak); opacity:0.55; }
+
+  /* The tag adopts the same leak colour as its feature */
+  .feat-tag {
+    font-size:10.5px; font-weight:500; letter-spacing:.22em;
+    text-transform:uppercase; color:var(--leak, var(--prussian-mid));
+    margin-bottom:16px;
+  }
+  .feat-body h3 { font-family:var(--serif); font-size:clamp(22px,2.6vw,32px); font-weight:500; line-height:1.15; letter-spacing:-.015em; color:var(--ink); margin-bottom:16px; }
+  .feat-body p  { font-size:15.5px; line-height:1.82; color:var(--ink-mid); }
+  /* The aside rule adopts the leak colour too — quietly */
+  .feat-aside-rule { width:24px; height:1px; background:var(--leak, var(--rule)); margin-bottom:16px; opacity:0.55; }
+  .feat-aside p { font-size:13px; line-height:1.75; color:var(--ink-low); }
+
+  /*
+   * ═══════════════════════════════════════════════════════════
+   * PRODUCT DEMONSTRATION — before → DNA → after.
+   * The product made literal, grounding the abstract strand.
+   * ═══════════════════════════════════════════════════════════
+   */
+  .demo-section { padding: 90px 52px; }
+  .demo-head { max-width: 640px; margin-bottom: 56px; }
+  .demo-head .section-label { font-size:10.5px; font-weight:500; letter-spacing:.22em; text-transform:uppercase; color:var(--prussian-mid); margin-bottom:18px; }
+  .demo-head h2 { font-family:var(--serif); font-size:clamp(28px,3.6vw,44px); font-weight:400; line-height:1.15; letter-spacing:-.02em; color:var(--ink); }
+  .demo-head h2 em { font-style:italic; }
+
+  .demo-flow { display:grid; grid-template-columns:1fr auto 1fr auto 1fr; gap:24px; align-items:stretch; }
+  .demo-stage { display:flex; flex-direction:column; }
+  .demo-stage-label { font-size:10px; font-weight:500; letter-spacing:.2em; text-transform:uppercase; color:var(--ink-low); margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+  .demo-stage-label .n { color:var(--prussian-mid); }
+
+  .demo-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; flex:1; }
+  .demo-grid .tile { aspect-ratio:1; border-radius:4px; }
+
+  .demo-report { flex:1; background:var(--ink); border-radius:10px; padding:22px; display:flex; flex-direction:column; min-height:240px; }
+  .demo-report .r-kicker { font-size:9px; font-weight:500; letter-spacing:.2em; text-transform:uppercase; color:var(--prussian-light); margin-bottom:8px; }
+  .demo-report .r-title { font-family:var(--serif); font-size:18px; font-style:italic; color:#f2f2f5; line-height:1.2; margin-bottom:18px; }
+  .demo-report .r-swatches { display:flex; gap:4px; margin-bottom:18px; }
+  .demo-report .r-swatches i { height:24px; flex:1; border-radius:3px; }
+  .demo-report .r-row { display:flex; justify-content:space-between; padding:7px 0; border-top:1px solid rgba(255,255,255,0.08); font-size:11px; }
+  .demo-report .r-row .k { color:rgba(255,255,255,0.4); letter-spacing:.04em; }
+  .demo-report .r-row .v { color:rgba(255,255,255,0.85); }
+  .demo-report .r-score { margin-top:auto; padding-top:16px; display:flex; align-items:baseline; gap:5px; }
+  .demo-report .r-score .num { font-family:var(--serif); font-size:30px; color:#f2f2f5; }
+  .demo-report .r-score .den { font-size:11px; color:rgba(255,255,255,0.4); }
+
+  .demo-arrow { align-self:center; color:var(--prussian-mid); font-size:18px; opacity:0.6; }
+
+  /* Feature metadata specifics */
+  .feat-specs { display:flex; flex-wrap:wrap; gap:6px 8px; margin-top:18px; }
+  .feat-specs span { font-size:11px; letter-spacing:.02em; color:var(--ink-low); padding:4px 10px; border:1px solid var(--rule); border-radius:999px; background:rgba(255,255,255,0.4); }
+
+  /* Social proof slot */
+  .proof-strip { padding:56px 52px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); background:var(--cream-2); text-align:center; }
+  .proof-strip .label { font-size:10.5px; font-weight:500; letter-spacing:.22em; text-transform:uppercase; color:var(--ink-low); margin-bottom:20px; }
+  .proof-strip .quote { font-family:var(--serif); font-size:clamp(20px,2.6vw,30px); font-weight:400; font-style:italic; line-height:1.4; color:var(--ink); max-width:760px; margin:0 auto; }
+  .proof-strip .attr { margin-top:20px; font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-mid); }
+
+  @media (max-width:860px) {
+    .demo-flow { grid-template-columns:1fr; gap:16px; }
+    .demo-arrow { transform:rotate(90deg); }
+  }
+
+  /* ─── Dark room — the strand colours glow faintly in the dark ── */
+  .dark-room { background:var(--ink); padding:120px 52px; position:relative; overflow:hidden; }
+  .dark-room-ghost {
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-family:var(--serif); font-size:clamp(120px,18vw,280px);
+    font-weight:600; font-style:italic; color:transparent;
+    -webkit-text-stroke:1px rgba(255,255,255,0.04);
+    pointer-events:none; user-select:none;
+  }
+  /*
+   * In the dark room, the DNA colours appear as faint points of light —
+   * like the identity persists even in the studio's darkness.
+   */
+  .dark-room-constellation {
+    position:absolute; inset:0; pointer-events:none;
+  }
+  .dark-room-constellation span {
+    position:absolute;
+    width:5px; height:5px;
+    border-radius:50%;
+    opacity:0.5;
+    filter: blur(0.5px);
+  }
+  .dark-room-content { position:relative; z-index:2; max-width:860px; margin:0 auto; text-align:center; }
+  .dark-room-label { font-size:10.5px; font-weight:500; letter-spacing:.24em; text-transform:uppercase; color:rgba(255,255,255,.26); margin-bottom:36px; }
+  .dark-room-quote { font-family:var(--serif); font-size:clamp(26px,3.8vw,50px); font-weight:400; font-style:italic; line-height:1.25; letter-spacing:-.015em; color:rgba(255,255,255,.88); }
+  .dark-room-attr { margin-top:32px; font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:rgba(255,255,255,.2); }
+
+  /*
+   * ═══════════════════════════════════════════════════════════
+   * MOVEMENT 4 — COHESION.
+   * The colour appears more confidently now. The pattern legible.
+   * ═══════════════════════════════════════════════════════════
+   */
+  .process-section { padding:100px 52px; }
+  .process-head { display:grid; grid-template-columns:1fr 1fr; gap:80px; margin-bottom:72px; align-items:end; }
+  .process-head h2 { font-family:var(--serif); font-size:clamp(30px,3.8vw,50px); font-weight:400; line-height:1.15; letter-spacing:-.02em; color:var(--ink); }
+  .process-head h2 em { font-style:italic; }
+  .process-head p { font-size:15px; line-height:1.82; color:var(--ink-mid); }
+  .process-steps { display:grid; grid-template-columns:repeat(4,1fr); border-left:1px solid var(--rule); }
+  .proc-step {
+    border-right:1px solid var(--rule);
+    padding:36px 28px; position:relative;
+    opacity:0; transition:opacity .55s ease;
+  }
+  .proc-step.visible { opacity:1; }
+  /*
+   * Each process step now carries a coloured top bar — pulled from
+   * the strand. More present than the feature leak. The pattern
+   * is becoming undeniable.
+   */
+  .proc-step::before {
+    content:'';
+    position:absolute;
+    top:-1px; left:0; right:0;
+    height:2px;
+    background:var(--leak);
+    transform:scaleX(0);
+    transform-origin:left;
+    transition:transform .7s cubic-bezier(0.16,1,0.3,1);
+  }
+  .proc-step.visible::before { transform:scaleX(1); }
+  .proc-step-num { font-family:var(--serif); font-size:11px; font-style:italic; color:var(--leak, var(--prussian-mid)); margin-bottom:24px; display:block; }
+  .proc-step h4 { font-family:var(--serif); font-size:19px; font-weight:500; line-height:1.3; color:var(--ink); margin-bottom:12px; }
+  .proc-step p  { font-size:13.5px; line-height:1.75; color:var(--ink-mid); }
+
+  /*
+   * ═══════════════════════════════════════════════════════════
+   * MOVEMENT 5 — RESOLUTION.
+   * All the strand's colours combine. Aesthetic enlightenment.
+   * The full palette, harmonised into one moment.
+   * ═══════════════════════════════════════════════════════════
+   */
+  .cta-final {
+    padding:100px 52px 90px;
+    position:relative;
+    border-top:1px solid var(--rule);
+    overflow:hidden;
+  }
+  /* The full DNA palette as a soft gradient wash behind the resolution */
+  .cta-wash {
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+    opacity:0.5;
+    background:
+      radial-gradient(ellipse 30% 50% at 8% 40%,  rgba(196,147,58,0.10), transparent 70%),
+      radial-gradient(ellipse 28% 45% at 28% 70%, rgba(122,152,112,0.09), transparent 70%),
+      radial-gradient(ellipse 26% 48% at 50% 35%, rgba(30,58,95,0.08),    transparent 70%),
+      radial-gradient(ellipse 30% 50% at 72% 65%, rgba(196,136,106,0.09), transparent 70%),
+      radial-gradient(ellipse 28% 46% at 92% 45%, rgba(184,174,200,0.10), transparent 70%);
+  }
+  .cta-inner {
+    position:relative; z-index:2;
+    display:grid; grid-template-columns:1fr 1fr; gap:80px; align-items:center;
+  }
+  .cta-final h2 { font-family:var(--serif); font-size:clamp(36px,4.8vw,62px); font-weight:400; line-height:1.08; letter-spacing:-.02em; color:var(--ink); }
+  .cta-final h2 em { font-style:italic; }
+  .cta-body { display:flex; flex-direction:column; gap:20px; }
+  .cta-body p { font-size:16px; line-height:1.82; color:var(--ink-mid); }
+  .cta-body .note { font-size:12px; color:var(--ink-low); letter-spacing:.05em; }
+
+  /* The resolution strand — full palette combined, a coda to specimen 001 */
+  .resolution-strand {
+    display:flex; align-items:flex-end; gap:3px;
+    height:44px; margin-bottom:32px;
+  }
+  .resolution-strand span {
+    flex:1; max-width:14px;
+    border-radius:2px 2px 0 0;
+    transform-origin:bottom;
+    opacity:0;
+  }
+  .cta-final.visible .resolution-strand span {
+    animation:dnaRise .6s cubic-bezier(0.16,1,0.3,1) both;
+  }
+
+  /* ─── Footer ───────────────────────────────────────────────── */
+  footer { border-top:1px solid var(--rule); padding:28px 52px; display:flex; justify-content:space-between; align-items:center; background:var(--cream-2); }
+  footer .wm { font-family:var(--serif); font-size:14px; font-style:italic; color:var(--ink); }
+  footer p   { font-size:11.5px; color:var(--ink-low); letter-spacing:.06em; }
+
+  /* ─── Responsive ───────────────────────────────────────────── */
+  @media (max-width:1024px) {
+    .feature-entry { grid-template-columns:80px 1fr; }
+    .feat-aside { display:none; }
+  }
+  @media (max-width:860px) {
+    nav { padding:20px 24px; }
+    .nav-center { display:none; }
+    .hero,.dna-installation,.feature-gallery,.process-section,.cta-final,footer { padding-left:24px; padding-right:24px; }
+    .hero-footer { grid-template-columns:1fr; }
+    .hero-footer-right { align-items:flex-start; }
+    .process-head { grid-template-columns:1fr; gap:24px; }
+    .process-steps { grid-template-columns:1fr 1fr; }
+    .cta-inner { grid-template-columns:1fr; }
+    .feature-entry { grid-template-columns:1fr; gap:20px; }
+    .dark-room { padding:80px 24px; }
+    footer { flex-direction:column; gap:8px; text-align:center; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<header>
+  <nav>
+    <a class="wordmark" href="#">Aesthete</a>
+    <div class="nav-center">
+      <a href="#">Work</a>
+      <a href="#">Process</a>
+      <a href="#">Pricing</a>
+    </div>
+    <a class="nav-cta" href="#">Begin →</a>
+  </nav>
+</header>
+
+<!-- ═══ MOVEMENT 1 — HERO. Two colours only. ═══ -->
+<section class="hero">
+  <div class="hero-painting" data-l="A" aria-hidden="true">A</div>
+  <div class="hero-grain" aria-hidden="true"></div>
+  <div class="hero-content">
+    <div class="exhibition-label">
+      <span class="tick"></span>
+      <span>Visual identity, codified</span>
+    </div>
+    <div class="hero-statement">
+      <h1>
+        Your feed<br />
+        <span class="ind"><span class="it">has a</span> signature.</span>
+      </h1>
+    </div>
+  </div>
+  <div class="hero-footer">
+    <p><strong style="color:var(--ink); font-weight:500;">Aesthete extracts the visual identity hidden in your content</strong> — palette, tone, mood, composition — then applies it automatically to every photo and video you publish. A creative director that already knows your taste.</p>
+    <div class="hero-footer-right">
+      <button class="btn-prussian" type="button">Analyse my feed →</button>
+      <span class="note">Free Aesthetic DNA report — no credit card required</span>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ MOVEMENT 2 — THE SOURCE. Full chromatic strand. ═══ -->
+<div class="dna-installation">
+  <div class="installation-meta">
+    <span class="install-label">Specimen № 001 — Colour identity strand</span>
+    <p class="install-caption">A real Aesthetic DNA strand, extracted from one creator's feed. Each band is a dominant colour sampled across their body of work — warm tones the creator brought, cool threads the system found.</p>
+  </div>
+  <div class="dna-object" id="dna">
+    <div class="dna-base"></div>
+  </div>
+  <div class="installation-title">
+    <h2>Warm Editorial Minimalism</h2>
+    <p>Extracted — 11 June 2025 — 12 images analysed</p>
+  </div>
+</div>
+
+<!-- PRODUCT DEMONSTRATION — before → DNA → after -->
+<section class="demo-section">
+  <div class="demo-head">
+    <p class="section-label">What actually happens</p>
+    <h2>Raw content in. <em>On-brand content</em> out.</h2>
+  </div>
+  <div class="demo-flow">
+    <!-- Stage 1 — raw feed -->
+    <div class="demo-stage">
+      <p class="demo-stage-label"><span class="n">01</span> Your raw feed</p>
+      <div class="demo-grid" aria-hidden="true">
+        <div class="tile" style="background:#7d94a8;"></div>
+        <div class="tile" style="background:#c9b48f;"></div>
+        <div class="tile" style="background:#9aa17c;"></div>
+        <div class="tile" style="background:#b58b6a;"></div>
+        <div class="tile" style="background:#6f7d86;"></div>
+        <div class="tile" style="background:#d8c9b0;"></div>
+      </div>
+    </div>
+
+    <div class="demo-arrow" aria-hidden="true">→</div>
+
+    <!-- Stage 2 — DNA report -->
+    <div class="demo-stage">
+      <p class="demo-stage-label"><span class="n">02</span> Aesthetic DNA</p>
+      <div class="demo-report" aria-hidden="true">
+        <p class="r-kicker">Aesthetic DNA</p>
+        <p class="r-title">Warm Editorial Minimalism</p>
+        <div class="r-swatches">
+          <i style="background:#c8a88a;"></i>
+          <i style="background:#e8ddd2;"></i>
+          <i style="background:#5c6b5e;"></i>
+          <i style="background:#9a8f82;"></i>
+        </div>
+        <div class="r-row"><span class="k">Temperature</span><span class="v">Warm</span></div>
+        <div class="r-row"><span class="k">Exposure</span><span class="v">Bright, airy</span></div>
+        <div class="r-row"><span class="k">Mood</span><span class="v">Considered</span></div>
+        <div class="r-score"><span class="num">91</span><span class="den">/ 100 continuity</span></div>
+      </div>
+    </div>
+
+    <div class="demo-arrow" aria-hidden="true">→</div>
+
+    <!-- Stage 3 — consistent output -->
+    <div class="demo-stage">
+      <p class="demo-stage-label"><span class="n">03</span> Graded to your DNA</p>
+      <div class="demo-grid" aria-hidden="true">
+        <div class="tile" style="background:#c8a88a;"></div>
+        <div class="tile" style="background:#d9c5b2;"></div>
+        <div class="tile" style="background:#9a8f82;"></div>
+        <div class="tile" style="background:#c4886a;"></div>
+        <div class="tile" style="background:#5c6b5e;"></div>
+        <div class="tile" style="background:#e8ddd2;"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ MOVEMENT 4 (moved up) — PROCESS. How it works, early. ═══ -->
+<section class="process-section">
+  <div class="process-head">
+    <h2>From feed to<br /><em>fingerprint</em><br />in four steps.</h2>
+    <p>No briefs. No presets. No design literacy required. Aesthete learns your identity once, then protects it on every post that follows.</p>
+  </div>
+  <div class="process-steps">
+    <div class="proc-step" style="--leak: var(--dna-amber);"><span class="proc-step-num">one</span><h4>Connect your feed</h4><p>Upload 6–12 posts. Aesthete reads the set as a whole — the identity that connects them, not each image alone.</p></div>
+    <div class="proc-step" style="--leak: var(--dna-sage);"><span class="proc-step-num">two</span><h4>Approve your DNA</h4><p>Review your Aesthetic DNA profile. Nothing is processed until you confirm it accurately represents your vision.</p></div>
+    <div class="proc-step" style="--leak: var(--dna-rose);"><span class="proc-step-num">three</span><h4>Upload raw content</h4><p>Drop in unedited photos and footage. Everything returns graded to your locked identity automatically.</p></div>
+    <div class="proc-step" style="--leak: var(--dna-prussian, #2C4E7A);"><span class="proc-step-num">four</span><h4>Stay consistent</h4><p>Weekly continuity scores and pre-publish checks keep your identity intact — post after post, month after month.</p></div>
+  </div>
+</section>
+
+<!-- ═══ MOVEMENT 3 — THE LEAK. Capabilities in depth. ═══ -->
+<section class="feature-gallery">
+  <div class="feature-entry" style="--leak: var(--dna-amber);">
+    <div class="feat-num">01</div>
+    <div class="feat-body">
+      <p class="feat-tag">Identity</p>
+      <h3>Aesthetic DNA fingerprinting</h3>
+      <p>Connect your feed and Aesthete extracts the identity embedded in it — palette, tone, composition, mood — into a precise, codified profile you approve before anything is touched.</p>
+      <div class="feat-specs">
+        <span>12-image analysis</span><span>palette extraction</span><span>composition mapping</span><span>mood detection</span>
+      </div>
+    </div>
+    <div class="feat-aside">
+      <div class="feat-aside-rule"></div>
+      <p>Most creators describe seeing their DNA report as the first time they truly understood what their feed was saying about them.</p>
+    </div>
+  </div>
+
+  <div class="feature-entry" style="--leak: var(--dna-sage);">
+    <div class="feat-num">02</div>
+    <div class="feat-body">
+      <p class="feat-tag">Continuity</p>
+      <h3>Style-locked content output</h3>
+      <p>Upload raw photos and footage. Everything returns graded to your DNA — colour, tone, and mood matched to your feed automatically. What once required an editor takes minutes.</p>
+      <div class="feat-specs">
+        <span>photo &amp; video</span><span>automatic colour grade</span><span>tone matching</span><span>all export formats</span>
+      </div>
+    </div>
+    <div class="feat-aside">
+      <div class="feat-aside-rule"></div>
+      <p>Works with JPEG, PNG, and video. Output exports in all standard formats, ready to publish directly from the studio.</p>
+    </div>
+  </div>
+
+  <div class="feature-entry" style="--leak: var(--dna-rose);">
+    <div class="feat-num">03</div>
+    <div class="feat-body">
+      <p class="feat-tag">Vigilance</p>
+      <h3>Pre-publish deviation checks</h3>
+      <p>Every post is scored against your DNA before it reaches your audience. Deviation alerts surface when something would break your visual identity — at the moment it can still be fixed.</p>
+      <div class="feat-specs">
+        <span>0–100 continuity score</span><span>pre-publish alerts</span><span>per-post breakdown</span>
+      </div>
+    </div>
+    <div class="feat-aside">
+      <div class="feat-aside-rule"></div>
+      <p>The continuity score is numerical — you see 91, not a vague approval. Precision matters when identity is the product.</p>
+    </div>
+  </div>
+
+  <div class="feature-entry" style="--leak: var(--dna-lilac);">
+    <div class="feat-num">04</div>
+    <div class="feat-body">
+      <p class="feat-tag">Evolution</p>
+      <h3>Identity that grows with you</h3>
+      <p>Every 90 days, Aesthete surfaces how your aesthetic has shifted and where it's heading. Your profile evolves with you rather than holding you still.</p>
+      <div class="feat-specs">
+        <span>90-day reviews</span><span>drift tracking</span><span>evolution reports</span>
+      </div>
+    </div>
+    <div class="feat-aside">
+      <div class="feat-aside-rule"></div>
+      <p>Style evolution reports document the arc of your visual identity over time — a record no other tool keeps.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Social proof slot — placeholder copy until a real creator features here -->
+<div class="proof-strip">
+  <p class="label">From the studio</p>
+  <p class="quote">"The first time I saw my Aesthetic DNA, I finally understood what my feed had been trying to say for three years."</p>
+  <p class="attr">— Early access creator · lifestyle &amp; wellness</p>
+</div>
+
+<!-- ═══ PHILOSOPHY — the studio. Moved down, after comprehension. ═══ -->
+<section class="dark-room">
+  <div class="dark-room-ghost" aria-hidden="true">Studio</div>
+  <div class="dark-room-constellation" id="constellation" aria-hidden="true"></div>
+  <div class="dark-room-content">
+    <p class="dark-room-label">The studio</p>
+    <p class="dark-room-quote">"The editing is just the first expression of the system. The real product is the identity that lives inside it."</p>
+    <p class="dark-room-attr">Aesthete — on why this is not an editing tool</p>
+  </div>
+</section>
+
+<!-- ═══ MOVEMENT 5 — RESOLUTION. All colours combine. ═══ -->
+<section class="cta-final" id="cta">
+  <div class="cta-wash" aria-hidden="true"></div>
+  <div class="cta-inner">
+    <div>
+      <div class="resolution-strand" id="resolution" aria-hidden="true"></div>
+      <h2>See your<br /><em>visual identity</em><br />clearly.</h2>
+    </div>
+    <div class="cta-body">
+      <p>The Aesthetic DNA report is free, takes two minutes, and is yours to keep — whether you subscribe or not. Most people describe it as the first time they truly understood what their feed was communicating.</p>
+      <div><button class="btn-prussian" type="button">Get your DNA report →</button></div>
+      <span class="note">Upload 6–12 images · receive your report in ~2 minutes · no account needed</span>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <span class="wm">Aesthete</span>
+  <p>Your visual world, consistent. © 2025</p>
+</footer>
+
+<script>
+/* ─── The source strand ───────────────────────────────────────── */
+const BANDS = [
+  { c:"#C4834A", h:74 }, { c:"#D4A870", h:58 }, { c:"#B8926A", h:86 },
+  { c:"#2C4E7A", h:62 },
+  { c:"#7A9870", h:90 }, { c:"#5A7A58", h:56 },
+  { c:"#E8D4B4", h:78 }, { c:"#D4BF98", h:66 }, { c:"#C8AA80", h:88 },
+  { c:"#1E3A5F", h:72 }, { c:"#3D6699", h:55 },
+  { c:"#C4886A", h:80 }, { c:"#B07060", h:65 }, { c:"#D4A898", h:92 },
+  { c:"#C4933A", h:70 }, { c:"#A87828", h:58 },
+  { c:"#2C4E7A", h:64 },
+  { c:"#9A8EA8", h:62 }, { c:"#D8C4B0", h:82 }, { c:"#E0CEBC", h:90 },
+  { c:"#5A7A58", h:60 }, { c:"#8A9898", h:74 }, { c:"#C8A080", h:56 },
+  { c:"#1E3A5F", h:78 },
+  { c:"#D4934E", h:68 }, { c:"#B8AEC8", h:88 }, { c:"#C49038", h:64 },
+  { c:"#C4834A", h:72 }, { c:"#8A9898", h:60 }, { c:"#E8D4B4", h:84 }
+];
+
+const dna = document.getElementById("dna");
+BANDS.forEach(({ c, h }, i) => {
+  const el = document.createElement("span");
+  el.style.cssText = `
+    background:${c};height:${h}%;flex:1;max-width:32px;
+    border-radius:2px 2px 0 0;transform-origin:bottom;
+    animation:
+      dnaRise .7s cubic-bezier(0.16,1,0.3,1) ${0.15 + i * 0.028}s both,
+      shimmer  ${3 + (i % 5) * 0.45}s ease-in-out ${i * 0.11}s infinite;
+  `;
+  dna.insertBefore(el, dna.lastElementChild);
+});
+
+/* ─── Dark room constellation — DNA colours as points of light ── */
+const POINTS = [
+  { c:"#C4933A", x:14, y:28 }, { c:"#7A9870", x:82, y:22 },
+  { c:"#C4886A", x:24, y:72 }, { c:"#B8AEC8", x:90, y:64 },
+  { c:"#D4934E", x:68, y:18 }, { c:"#5A7A58", x:8,  y:58 },
+  { c:"#8A9898", x:50, y:84 }, { c:"#C4834A", x:38, y:14 },
+  { c:"#3D6699", x:76, y:80 }, { c:"#E8D4B4", x:60, y:50 }
+];
+const constellation = document.getElementById("constellation");
+POINTS.forEach(({ c, x, y }) => {
+  const el = document.createElement("span");
+  el.style.cssText = `background:${c}; left:${x}%; top:${y}%; box-shadow:0 0 12px 2px ${c}66;`;
+  constellation.appendChild(el);
+});
+
+/* ─── Resolution strand — full palette, the coda ──────────────── */
+const RESOLUTION = [
+  "#C4933A","#D4934E","#C4834A","#9B6A38","#7A9870","#5A7A58",
+  "#C4886A","#D4A898","#8A9898","#B8AEC8","#E8D4B4","#1E3A5F",
+  "#2C4E7A","#3D6699","#C49038","#B8926A","#D8C4B0","#C8A080",
+  "#9A8EA8","#E0CEBC","#C4886A","#7A9870","#C4933A","#1E3A5F"
+];
+const resolution = document.getElementById("resolution");
+RESOLUTION.forEach((c, i) => {
+  const el = document.createElement("span");
+  const h = 55 + ((i * 13) % 45);
+  el.style.cssText = `background:${c}; height:${h}%; animation-delay:${i * 0.04}s;`;
+  resolution.appendChild(el);
+});
+
+/* ─── Scroll reveals ──────────────────────────────────────────── */
+const io = new IntersectionObserver(
+  entries => entries.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add("visible"); io.unobserve(e.target); }
+  }),
+  { threshold: 0.1 }
+);
+document.querySelectorAll(".feature-entry, .proc-step, .cta-final").forEach(el => io.observe(el));
+</script>
+</body>
+</html>

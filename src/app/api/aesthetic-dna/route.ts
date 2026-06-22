@@ -19,6 +19,11 @@ const MIN_IMAGES = 3
 const MAX_IMAGES = 12
 const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
 
+const STORAGE_BUCKET = 'aesthetic-images'
+const MAX_STORED_IMAGES = 4
+
+type AdminClient = ReturnType<typeof createAdminClient>
+
 /** url-safe, nanoid-style 8-char slug. */
 function generateSlug(length = 8): string {
   const alphabet = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -29,6 +34,52 @@ function generateSlug(length = 8): string {
     slug += alphabet[bytes[i] % alphabet.length]
   }
   return slug
+}
+
+// Idempotent bucket check, memoised per server process so we only hit the
+// storage API once rather than on every analysis request.
+let bucketEnsured = false
+async function ensureStorageBucket(admin: AdminClient): Promise<void> {
+  if (bucketEnsured) return
+  const { error } = await admin.storage.createBucket(STORAGE_BUCKET, { public: true })
+  // createBucket errors if it already exists — that's the expected steady state.
+  if (error && !/exist/i.test(error.message)) {
+    console.error('Failed to ensure storage bucket:', error)
+    return
+  }
+  bucketEnsured = true
+}
+
+/**
+ * Upload up to MAX_STORED_IMAGES source images to public storage and return
+ * their public URLs. A failure on any individual image is logged and skipped
+ * so a storage hiccup never blocks the analysis itself.
+ */
+async function uploadSourceImages(
+  admin: AdminClient,
+  profileId: string,
+  files: File[],
+  buffers: Buffer[]
+): Promise<string[]> {
+  await ensureStorageBucket(admin)
+
+  const urls: string[] = []
+  const count = Math.min(files.length, MAX_STORED_IMAGES)
+  for (let i = 0; i < count; i++) {
+    const file = files[i]
+    const safeName = (file.name || `image-${i}`).replace(/[^a-zA-Z0-9._-]/g, '-')
+    const path = `${profileId}/${i}-${safeName}`
+    const { error } = await admin.storage
+      .from(STORAGE_BUCKET)
+      .upload(path, buffers[i], { contentType: file.type, upsert: true })
+    if (error) {
+      console.error(`Failed to upload source image ${path}:`, error)
+      continue
+    }
+    const { data } = admin.storage.from(STORAGE_BUCKET).getPublicUrl(path)
+    urls.push(data.publicUrl)
+  }
+  return urls
 }
 
 export async function POST(request: Request) {
@@ -60,6 +111,7 @@ export async function POST(request: Request) {
   }
 
   const imageParts: ChatCompletionContentPart[] = []
+  const fileBuffers: Buffer[] = []
   for (const file of files) {
     if (!ALLOWED_TYPES.has(file.type)) {
       return NextResponse.json(
@@ -73,14 +125,21 @@ export async function POST(request: Request) {
         { status: 400 }
       )
     }
-    const base64 = Buffer.from(await file.arrayBuffer()).toString('base64')
+    const buffer = Buffer.from(await file.arrayBuffer())
+    fileBuffers.push(buffer)
     imageParts.push({
       type: 'image_url',
-      image_url: { url: `data:${file.type};base64,${base64}`, detail: 'low' },
+      image_url: { url: `data:${file.type};base64,${buffer.toString('base64')}`, detail: 'low' },
     })
   }
 
-  // 3. Call GPT-4o Vision, retrying once if validation fails.
+  // 3. Kick off source-image uploads concurrently with the analysis. We mint
+  //    the profile id up front so storage paths and the DB row agree.
+  const admin = createAdminClient()
+  const profileId = crypto.randomUUID()
+  const uploadPromise = uploadSourceImages(admin, profileId, files, fileBuffers)
+
+  // 4. Call GPT-4o Vision, retrying once if validation fails.
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
   const messages: ChatCompletionMessageParam[] = [
@@ -137,18 +196,28 @@ export async function POST(request: Request) {
     )
   }
 
-  // 4. Persist with the service-role client (RLS-bypassing, server-only).
-  const admin = createAdminClient()
+  // 5. Resolve the (best-effort) uploads. A storage failure must never sink
+  //    a successful analysis, so swallow errors down to an empty list.
+  let imageUrls: string[] = []
+  try {
+    imageUrls = await uploadPromise
+  } catch (err) {
+    console.error('Source image upload failed:', err)
+  }
+
+  // 6. Persist with the service-role client (RLS-bypassing, server-only).
   const shareSlug = generateSlug()
 
   const { data: profile, error: dbError } = await admin
     .from('aesthetic_profiles')
     .insert({
+      id: profileId,
       user_id: user.id,
       status: 'complete',
       dna: parseResult.dna,
       raw_model_output: rawOutput,
       image_count: files.length,
+      image_urls: imageUrls,
       model: MODEL,
       prompt_version: PROMPT_VERSION,
       share_slug: shareSlug,
