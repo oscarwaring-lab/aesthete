@@ -42,7 +42,7 @@ export function DashboardNav({ email }: { email?: string | null }) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          height: 56,
+          height: 58,
           padding: '0 28px',
         }}
       >
@@ -72,7 +72,7 @@ export function DashboardNav({ email }: { email?: string | null }) {
         </Link>
 
         {/* ─── Centre links ───────────────────────────────────── */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           {links.map(({ href, label }) => {
             const active =
               href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(href)
@@ -84,7 +84,7 @@ export function DashboardNav({ email }: { email?: string | null }) {
                   fontSize: 12,
                   textTransform: 'uppercase',
                   letterSpacing: '0.08em',
-                  padding: '5px 9px',
+                  padding: '5px 11px',
                   borderRadius: 5,
                   color: active ? '#f2f2f5' : 'rgba(255,255,255,0.35)',
                   background: active ? 'rgba(255,255,255,0.07)' : 'transparent',

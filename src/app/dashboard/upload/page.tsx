@@ -2,7 +2,7 @@
 
 import { useCallback, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ImagePlus, Loader2, ScanLine, X } from 'lucide-react'
+import { ImagePlus, X } from 'lucide-react'
 
 const MIN_IMAGES = 3
 const MAX_IMAGES = 12
@@ -135,121 +135,106 @@ export default function UploadPage() {
     }
   }
 
-  if (analyzing) {
-    return <AnalyzingState count={images.length} />
-  }
+  const ready = images.length >= MIN_IMAGES
 
   return (
-    <div className="mx-auto max-w-3xl px-6 py-12">
-      <h1 className="text-2xl font-semibold tracking-tight">Analyse your feed</h1>
-      <p className="mt-1 text-sm text-muted">
-        Upload {MIN_IMAGES}–{MAX_IMAGES} images that represent your visual identity. We read them
-        as one set.
-      </p>
-
-      {/* Drop zone */}
-      <div
-        onClick={() => inputRef.current?.click()}
-        onDragOver={(e) => {
-          e.preventDefault()
-          setDragging(true)
-        }}
-        onDragLeave={() => setDragging(false)}
-        onDrop={onDrop}
-        className={`mt-8 flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed px-6 py-14 text-center transition-colors ${
-          dragging
-            ? 'border-[var(--accent)] bg-[var(--accent)]/5'
-            : 'border-border bg-panel hover:border-white/20'
-        }`}
-      >
-        <div
-          className="mb-4 flex h-12 w-12 items-center justify-center rounded-full"
-          style={{ background: 'linear-gradient(135deg, var(--accent), var(--violet))' }}
-        >
-          <ImagePlus className="h-5 w-5 text-white" />
-        </div>
-        <p className="text-sm font-medium">Drag & drop your images here</p>
-        <p className="mt-1 text-xs text-muted">or click to browse — JPEG, PNG, WebP up to 8MB</p>
-        <input
-          ref={inputRef}
-          type="file"
-          accept={ALLOWED_TYPES.join(',')}
-          multiple
-          hidden
-          onChange={(e) => {
-            if (e.target.files) addFiles(e.target.files)
-            e.target.value = ''
-          }}
-        />
-      </div>
-
-      {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
-
-      {/* Previews */}
-      {images.length > 0 && (
-        <>
-          <div className="mt-8 flex items-center justify-between">
-            <span className="text-sm text-muted">
-              {images.length} / {MAX_IMAGES} selected
-            </span>
-          </div>
-          <div className="mt-3 grid grid-cols-3 gap-3 sm:grid-cols-4">
-            {images.map((img) => (
-              <div
-                key={img.id}
-                className="group relative aspect-square overflow-hidden rounded-xl border border-border"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={img.url} alt="" className="h-full w-full object-cover" />
-                <button
-                  onClick={() => removeImage(img.id)}
-                  className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/70 text-white opacity-0 transition-opacity group-hover:opacity-100"
-                  aria-label="Remove image"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
-
-      <button
-        onClick={analyze}
-        disabled={images.length < MIN_IMAGES}
-        className="mt-8 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3.5 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
-        style={{ backgroundColor: 'var(--accent)' }}
-      >
-        Reveal my Aesthetic DNA
-      </button>
-    </div>
-  )
-}
-
-function AnalyzingState({ count }: { count: number }) {
-  return (
-    <div className="flex min-h-[70vh] flex-col items-center justify-center px-6 text-center">
-      <div className="relative mb-8 h-40 w-40 overflow-hidden rounded-2xl border border-border bg-panel">
-        {/* sweeping scan line */}
-        <div
-          className="animate-scan absolute inset-x-0 h-1/3"
+    <div style={{ background: 'var(--void)', minHeight: '100%', padding: 28 }}>
+      <div style={{ maxWidth: 760, margin: '0 auto' }}>
+        {/* ─── Heading ──────────────────────────────────────────── */}
+        <h1
           style={{
-            background:
-              'linear-gradient(180deg, transparent, rgba(109,92,255,0.45), transparent)',
+            fontFamily: 'var(--font-playfair), Georgia, serif',
+            fontSize: 28,
+            fontWeight: 500,
+            color: '#f2f2f5',
+            letterSpacing: '-0.02em',
+            margin: 0,
           }}
-        />
-        <div className="flex h-full w-full items-center justify-center">
-          <ScanLine className="h-10 w-10 text-[var(--accent)]" />
-        </div>
-      </div>
+        >
+          Analyse your feed
+        </h1>
+        <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)', marginTop: 6 }}>
+          Upload {MIN_IMAGES}–{MAX_IMAGES} images that represent your visual identity. We read them
+          as one set.
+        </p>
 
-      <h2 className="text-xl font-semibold tracking-tight">Reading your visual identity…</h2>
-      <p className="mt-2 max-w-sm text-sm text-muted">
-        Studying {count} images as one set — sampling palette, tone, composition and mood.
-      </p>
-      <div className="mt-6 flex items-center gap-2 text-xs text-muted">
-        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-        This usually takes 10–20 seconds
+        {/* ─── Drop zone ────────────────────────────────────────── */}
+        <div
+          className={`upload-zone${dragging ? ' dragging' : ''}`}
+          style={{ marginTop: 24 }}
+          onClick={() => inputRef.current?.click()}
+          onDragOver={(e) => {
+            e.preventDefault()
+            setDragging(true)
+          }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={onDrop}
+        >
+          <ImagePlus size={32} style={{ color: 'rgba(255,255,255,0.2)' }} strokeWidth={1.5} />
+          <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', marginTop: 14 }}>
+            Drag &amp; drop your images here
+          </p>
+          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', marginTop: 6 }}>
+            or click to browse — JPEG, PNG, WebP up to 8MB
+          </p>
+          <input
+            ref={inputRef}
+            type="file"
+            accept={ALLOWED_TYPES.join(',')}
+            multiple
+            hidden
+            onChange={(e) => {
+              if (e.target.files) addFiles(e.target.files)
+              e.target.value = ''
+            }}
+          />
+        </div>
+
+        {error && (
+          <p style={{ marginTop: 16, fontSize: 13, color: '#C4933A' }}>{error}</p>
+        )}
+
+        {/* ─── Previews ─────────────────────────────────────────── */}
+        {images.length > 0 && (
+          <>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(4, 1fr)',
+                gap: 8,
+                marginTop: 24,
+              }}
+            >
+              {images.map((img) => (
+                <div key={img.id} className="upload-thumb">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={img.url} alt="" />
+                  <button
+                    className="remove"
+                    onClick={() => removeImage(img.id)}
+                    aria-label="Remove image"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <p style={{ marginTop: 16, fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>
+              {images.length} / {MAX_IMAGES} selected
+            </p>
+          </>
+        )}
+
+        {/* ─── Analyse button ───────────────────────────────────── */}
+        <button
+          className={`analyse-btn${analyzing ? ' loading' : ''}`}
+          style={{ marginTop: images.length > 0 ? 8 : 24 }}
+          onClick={analyze}
+          disabled={!ready || analyzing}
+        >
+          {analyzing ? 'Reading your visual identity…' : 'Reveal my Aesthetic DNA'}
+        </button>
       </div>
     </div>
   )

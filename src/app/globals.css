@@ -116,8 +116,8 @@ body {
  * Two animations on one element: rise uses fill `both` so it holds at
  * scaleY(1); breathe is later in the list so it wins once it begins. */
 @keyframes dash-band-rise {
-  from { transform: scaleY(0); }
-  to { transform: scaleY(1); }
+  from { transform: scaleY(0); opacity: 0; }
+  to { transform: scaleY(1); opacity: 1; }
 }
 @keyframes dash-band-breathe {
   0%, 100% { transform: scaleY(1); }
@@ -159,6 +159,95 @@ body {
 }
 .blank-canvas:hover {
   border-color: rgba(196, 180, 150, 0.36);
+}
+
+/* ─── Upload page (analyse your feed) ────────────────────────────── */
+@keyframes studio-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.upload-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  border-radius: 2px;
+  background: #0f0f12;
+  padding: 48px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.25s ease, background 0.25s ease;
+}
+.upload-zone:hover,
+.upload-zone.dragging {
+  border-color: rgba(196, 147, 58, 0.4);
+  background: rgba(196, 147, 58, 0.03);
+}
+
+.upload-thumb {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 2px;
+  overflow: hidden;
+}
+.upload-thumb img {
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+}
+.upload-thumb .remove {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 22px;
+  width: 22px;
+  border: none;
+  border-radius: 2px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.upload-thumb:hover .remove {
+  opacity: 1;
+}
+
+.analyse-btn {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #1e3a5f;
+  color: #a0b8d4;
+  border: none;
+  border-radius: 0;
+  padding: 14px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+.analyse-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.analyse-btn.loading {
+  cursor: progress;
+  animation: studio-pulse 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .analyse-btn.loading {
+    animation: none !important;
+  }
 }
 
 /* ════════════════════════════════════════════════════════════════
