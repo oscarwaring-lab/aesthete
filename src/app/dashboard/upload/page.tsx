@@ -101,7 +101,7 @@ export default function UploadPage() {
   const ready = images.length >= MIN_IMAGES
 
   return (
-    <div style={{ background: 'var(--void)', minHeight: '100%', padding: 28 }}>
+    <div style={{ background: '#16161e', minHeight: '100%', padding: 28 }}>
       <div style={{ maxWidth: 760, margin: '0 auto' }}>
         {/* ─── Heading ──────────────────────────────────────────── */}
         <h1

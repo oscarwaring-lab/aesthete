@@ -134,14 +134,15 @@ body {
 /* ─── Dashboard profile card ─────────────────────────────────────── */
 .cc {
   display: block;
-  background: #0f0f12;
-  border: 1px solid rgba(196, 147, 58, 0.22);
+  background: #0e0e14;
+  border: 1px solid rgba(196, 147, 58, 0.28);
   border-radius: 2px;
   padding: 14px 13px 11px;
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.04);
   transition: border-color 0.25s ease, transform 0.25s ease;
 }
 .cc:hover {
-  border-color: rgba(196, 147, 58, 0.52);
+  border-color: rgba(196, 147, 58, 0.58);
   transform: translateY(-2px);
 }
 
@@ -154,13 +155,25 @@ body {
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.35);
   background: none;
   border: none;
   transition: color 0.2s ease;
 }
 .check-post-link:hover {
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.65);
+}
+
+/* ─── Dashboard nav DNA dot ──────────────────────────────────────── */
+/* The wordmark dot glows in the user's dominant colour and breathes gently.
+ * Colour + glow are set inline (they're dynamic); only the pulse lives here. */
+.nav-dna-dot {
+  animation: studio-pulse 4s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-dna-dot {
+    animation: none !important;
+  }
 }
 
 /* ─── Dashboard blank-canvas card ────────────────────────────────── */
@@ -169,14 +182,14 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: #131109;
-  border: 1px dashed rgba(196, 180, 150, 0.25);
+  background: #111108;
+  border: 1px dashed rgba(196, 180, 150, 0.28);
   border-radius: 2px;
   min-height: 132px;
   transition: border-color 0.25s ease;
 }
 .blank-canvas:hover {
-  border-color: rgba(196, 180, 150, 0.36);
+  border-color: rgba(196, 180, 150, 0.4);
 }
 
 /* ─── Upload page (analyse your feed) ────────────────────────────── */

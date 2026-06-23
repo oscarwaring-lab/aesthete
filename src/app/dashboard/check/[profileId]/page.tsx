@@ -162,7 +162,7 @@ export default function CheckPage({
   }
 
   return (
-    <div style={{ background: '#0a0a0c', minHeight: '100%', padding: 28 }}>
+    <div style={{ background: '#16161e', minHeight: '100%', padding: 28 }}>
       <div style={{ maxWidth: 760, margin: '0 auto' }}>
         {/* ─── Header ──────────────────────────────────────────── */}
         <Link

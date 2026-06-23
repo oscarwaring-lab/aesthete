@@ -9,7 +9,13 @@ import { createClient } from '@/lib/supabase/client'
  * Top nav for dashboard pages.
  * Wordmark left, links centre, avatar + sign-out right.
  */
-export function DashboardNav({ email }: { email?: string | null }) {
+export function DashboardNav({
+  email,
+  dominantHex = '#1E3A5F',
+}: {
+  email?: string | null
+  dominantHex?: string
+}) {
   const router = useRouter()
   const pathname = usePathname()
   const supabase = createClient()
@@ -34,7 +40,9 @@ export function DashboardNav({ email }: { email?: string | null }) {
         top: 0,
         zIndex: 10,
         background: 'transparent',
-        borderBottom: '1px solid rgba(255,255,255,0.055)',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
+        borderBottom: `1px solid ${dominantHex}28`,
       }}
     >
       <nav
@@ -42,7 +50,7 @@ export function DashboardNav({ email }: { email?: string | null }) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          height: 58,
+          height: 62,
           padding: '0 28px',
         }}
       >
@@ -50,17 +58,32 @@ export function DashboardNav({ email }: { email?: string | null }) {
         <Link
           href="/dashboard"
           style={{
+            display: 'inline-flex',
+            alignItems: 'center',
             fontFamily: 'var(--font-playfair), Georgia, serif',
             fontStyle: 'italic',
             fontSize: 16,
             color: '#f2f2f5',
           }}
         >
+          {/* Glowing dot — pulses with the user's dominant DNA colour. */}
+          <span
+            aria-hidden
+            className="nav-dna-dot"
+            style={{
+              width: 6,
+              height: 6,
+              borderRadius: '50%',
+              marginRight: 8,
+              background: dominantHex,
+              boxShadow: `0 0 8px ${dominantHex}99`,
+            }}
+          />
           Aesthete
           <sup
             style={{
               fontFamily: 'system-ui, sans-serif',
-              fontSize: 9,
+              fontSize: 10,
               textTransform: 'uppercase',
               letterSpacing: '0.15em',
               color: '#3D6699',
@@ -86,8 +109,11 @@ export function DashboardNav({ email }: { email?: string | null }) {
                   letterSpacing: '0.08em',
                   padding: '5px 11px',
                   borderRadius: 5,
-                  color: active ? '#f2f2f5' : 'rgba(255,255,255,0.35)',
-                  background: active ? 'rgba(255,255,255,0.07)' : 'transparent',
+                  color: active ? '#f2f2f5' : 'rgba(255,255,255,0.45)',
+                  background: active ? 'rgba(255,255,255,0.09)' : 'transparent',
+                  border: active
+                    ? '1px solid rgba(255,255,255,0.06)'
+                    : '1px solid transparent',
                 }}
               >
                 {label}

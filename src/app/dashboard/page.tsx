@@ -2,6 +2,8 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { DnaStrand } from '@/components/DnaStrand'
 import { UpgradeSuccessBanner } from '@/components/UpgradeSuccessBanner'
+import { DashboardShell } from '@/components/DashboardShell'
+import { extractDnaAmbient } from '@/lib/dna-ambient'
 import type { AestheticDna } from '@/lib/aesthetic-dna'
 
 type ProfileRow = {
@@ -37,6 +39,12 @@ export default async function DashboardPage({
 
   const rows = (profiles ?? []) as ProfileRow[]
 
+  // Tune the room to the user's most recent DNA. Falls back to Prussian blue
+  // when no profile exists yet — the space is ready, but not yet personalised.
+  const { dominantHex, paletteHex } = extractDnaAmbient(
+    rows[0]?.dna?.color?.palette
+  )
+
   // Fall back to free-tier defaults if no subscription row exists yet.
   const subscription: Subscription =
     (subscriptionRow as Subscription | null) ?? {
@@ -56,7 +64,8 @@ export default async function DashboardPage({
   )
 
   return (
-    <div style={{ background: 'var(--void)', minHeight: '100%', padding: 28 }}>
+    <DashboardShell dominantHex={dominantHex} paletteHex={paletteHex}>
+      <div style={{ minHeight: '100%', padding: 28 }}>
       {upgraded === 'true' && (
         <UpgradeSuccessBanner tier={subscription.tier} available={available} />
       )}
@@ -86,7 +95,7 @@ export default async function DashboardPage({
           <p
             style={{
               fontSize: 11.5,
-              color: 'rgba(255,255,255,0.25)',
+              color: 'rgba(255,255,255,0.55)',
               marginTop: 5,
             }}
           >
@@ -109,7 +118,7 @@ export default async function DashboardPage({
             <p
               style={{
                 fontSize: 11,
-                color: 'rgba(255,255,255,0.3)',
+                color: 'rgba(255,255,255,0.55)',
                 marginTop: 8,
               }}
             >
@@ -172,7 +181,8 @@ export default async function DashboardPage({
           Studio · Aesthete
         </span>
       </div>
-    </div>
+      </div>
+    </DashboardShell>
   )
 }
 
@@ -193,7 +203,7 @@ function ProfileCard({ profile }: { profile: ProfileRow }) {
           style={{
             height: 1,
             border: 'none',
-            background: 'rgba(255,255,255,0.055)',
+            background: 'rgba(255,255,255,0.08)',
             margin: '10px 0 8px',
           }}
         />
@@ -212,7 +222,7 @@ function ProfileCard({ profile }: { profile: ProfileRow }) {
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-          <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.22)', letterSpacing: '0.06em' }}>
+          <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.32)', letterSpacing: '0.06em' }}>
             {date}
           </span>
           <span style={{ fontSize: 10, color: '#C4933A', letterSpacing: '0.04em', fontWeight: 500 }}>
