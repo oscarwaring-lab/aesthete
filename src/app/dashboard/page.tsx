@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { DnaStrand } from '@/components/DnaStrand'
+import { UpgradeSuccessBanner } from '@/components/UpgradeSuccessBanner'
 import type { AestheticDna } from '@/lib/aesthetic-dna'
 
 type ProfileRow = {
@@ -9,19 +10,57 @@ type ProfileRow = {
   created_at: string
 }
 
-export default async function DashboardPage() {
+type Subscription = {
+  tier: string
+  analyses_used: number
+  analyses_limit: number
+}
+
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ upgraded?: string }>
+}) {
   const supabase = await createClient()
 
-  // RLS scopes this to the signed-in user; index covers (user_id, created_at desc).
-  const { data: profiles } = await supabase
-    .from('aesthetic_profiles')
-    .select('id, dna, created_at')
-    .order('created_at', { ascending: false })
+  // RLS scopes both queries to the signed-in user.
+  const [{ data: profiles }, { data: subscriptionRow }] = await Promise.all([
+    supabase
+      .from('aesthetic_profiles')
+      .select('id, dna, created_at')
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('user_subscriptions')
+      .select('tier, analyses_used, analyses_limit')
+      .maybeSingle(),
+  ])
 
   const rows = (profiles ?? []) as ProfileRow[]
 
+  // Fall back to free-tier defaults if no subscription row exists yet.
+  const subscription: Subscription =
+    (subscriptionRow as Subscription | null) ?? {
+      tier: 'free',
+      analyses_used: 0,
+      analyses_limit: 1,
+    }
+
+  const showUpgradePrompt =
+    subscription.tier === 'free' &&
+    subscription.analyses_used >= 1
+
+  const { upgraded } = await searchParams
+  const available = Math.max(
+    subscription.analyses_limit - subscription.analyses_used,
+    0
+  )
+
   return (
     <div style={{ background: 'var(--void)', minHeight: '100%', padding: 28 }}>
+      {upgraded === 'true' && (
+        <UpgradeSuccessBanner tier={subscription.tier} available={available} />
+      )}
+
       {/* ─── Header row ─────────────────────────────────────────── */}
       <div
         style={{
@@ -53,6 +92,30 @@ export default async function DashboardPage() {
           >
             Aesthetic DNA reports from your analysed feeds
           </p>
+
+          {showUpgradePrompt ? (
+            <Link
+              href="/pricing"
+              style={{
+                display: 'inline-block',
+                fontSize: 11,
+                color: '#C4933A',
+                marginTop: 8,
+              }}
+            >
+              Upgrade to run more analyses →
+            </Link>
+          ) : (
+            <p
+              style={{
+                fontSize: 11,
+                color: 'rgba(255,255,255,0.3)',
+                marginTop: 8,
+              }}
+            >
+              {subscription.analyses_used} / {subscription.analyses_limit} analyses this month
+            </p>
+          )}
         </div>
 
         <Link
