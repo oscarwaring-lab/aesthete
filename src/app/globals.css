@@ -145,6 +145,24 @@ body {
   transform: translateY(-2px);
 }
 
+/* ─── Dashboard "Check a post" link (below each profile card) ─────── */
+.check-post-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 8px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.3);
+  background: none;
+  border: none;
+  transition: color 0.2s ease;
+}
+.check-post-link:hover {
+  color: rgba(255, 255, 255, 0.6);
+}
+
 /* ─── Dashboard blank-canvas card ────────────────────────────────── */
 .blank-canvas {
   display: flex;
@@ -244,8 +262,14 @@ body {
   animation: studio-pulse 1.6s ease-in-out infinite;
 }
 
+/* Continuity check — pulsing overlay text while the score is computed. */
+.continuity-pulse {
+  animation: studio-pulse 1.6s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .analyse-btn.loading {
+  .analyse-btn.loading,
+  .continuity-pulse {
     animation: none !important;
   }
 }
