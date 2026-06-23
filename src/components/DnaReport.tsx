@@ -56,6 +56,21 @@ export function DnaReport({
             <h1 className="mt-2 text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
               {dna.identity.archetype}
             </h1>
+            {dna.creative_brief?.signature && (
+              <p
+                style={{
+                  fontFamily: 'var(--font-playfair), serif',
+                  fontStyle: 'italic',
+                  fontSize: 18,
+                  color: 'rgba(255,255,255,0.65)',
+                  lineHeight: 1.5,
+                  maxWidth: 600,
+                  marginTop: 8,
+                }}
+              >
+                {dna.creative_brief.signature}
+              </p>
+            )}
             <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted">
               {dna.identity.summary}
             </p>
@@ -81,6 +96,21 @@ export function DnaReport({
                 </div>
               ))}
             </div>
+            {dna.creative_brief?.colour_story && (
+              <p
+                style={{
+                  fontSize: 14,
+                  color: 'rgba(255,255,255,0.5)',
+                  lineHeight: 1.7,
+                  fontStyle: 'italic',
+                  marginTop: 12,
+                  borderLeft: '2px solid rgba(196,147,58,0.3)',
+                  paddingLeft: 16,
+                }}
+              >
+                {dna.creative_brief.colour_story}
+              </p>
+            )}
           </Section>
 
           {/* Source material */}
@@ -160,8 +190,94 @@ export function DnaReport({
             </div>
           </Section>
 
-          {/* Processing directives */}
-          <Section title="Processing directives">
+          {/* Creative brief — only present on v2+ profiles */}
+          {dna.creative_brief && (
+            <section>
+              <hr style={{ border: 0, borderTop: '1px solid rgba(255,255,255,0.055)', margin: 0 }} />
+              <h2 className="mb-5 mt-8 text-xs font-medium uppercase tracking-[0.18em] text-muted">
+                Creative brief
+              </h2>
+
+              {/* Shoot this */}
+              <div
+                style={{
+                  fontSize: 10,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.18em',
+                  color: 'rgba(196,147,58,0.7)',
+                }}
+              >
+                Shoot this
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 12 }}>
+                {dna.creative_brief.shoot_next.map((item, i) => (
+                  <div key={`shoot-${i}`} style={{ display: 'flex', gap: 10 }}>
+                    <span style={{ color: 'rgba(196,147,58,0.9)', flexShrink: 0 }}>→</span>
+                    <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)', lineHeight: 1.6 }}>
+                      {item}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Avoid */}
+              <div
+                style={{
+                  fontSize: 10,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.18em',
+                  color: 'rgba(255,255,255,0.35)',
+                  marginTop: 28,
+                }}
+              >
+                Avoid
+              </div>
+              {dna.creative_brief.avoid && dna.creative_brief.avoid.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>
+                  {dna.creative_brief.avoid.map((item, i) => (
+                    <div key={`avoid-${i}`} style={{ display: 'flex', gap: 10 }}>
+                      <span style={{ color: 'rgba(255,255,255,0.3)', flexShrink: 0 }}>×</span>
+                      <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.45)', lineHeight: 1.6 }}>
+                        {item}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Where this goes next */}
+              {dna.creative_brief.evolution && (
+                <>
+                  <div
+                    style={{
+                      fontSize: 10,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.18em',
+                      color: 'rgba(255,255,255,0.35)',
+                      marginTop: 28,
+                    }}
+                  >
+                    Where this goes next
+                  </div>
+                  <p
+                    style={{
+                      fontFamily: 'var(--font-playfair), serif',
+                      fontStyle: 'italic',
+                      fontSize: 15,
+                      color: 'rgba(255,255,255,0.6)',
+                      lineHeight: 1.75,
+                      marginTop: 10,
+                    }}
+                  >
+                    {dna.creative_brief.evolution}
+                  </p>
+                </>
+              )}
+            </section>
+          )}
+
+          {/* Technical direction (processing directives) */}
+          <Section title="Technical direction">
             <blockquote className="rounded-2xl border-l-2 border-[var(--accent)] bg-white/[0.03] px-5 py-4 text-sm italic leading-relaxed text-foreground/90">
               {dna.processing_directives.reference_note}
             </blockquote>

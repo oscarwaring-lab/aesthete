@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -5,6 +6,30 @@ import { DnaReport } from '@/components/DnaReport'
 import { EditorialNav } from '@/components/editorial/EditorialNav'
 import { EditorialFooter } from '@/components/editorial/EditorialFooter'
 import type { AestheticDna } from '@/lib/aesthetic-dna'
+
+// Prefer the creative-director signature as the share preview description,
+// falling back to the identity summary for older (v1) profiles.
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}): Promise<Metadata> {
+  const { slug } = await params
+  const admin = createAdminClient()
+
+  const { data: profile } = await admin
+    .from('aesthetic_profiles')
+    .select('dna')
+    .eq('share_slug', slug)
+    .single()
+
+  if (!profile) return {}
+
+  const dna = profile.dna as AestheticDna
+  const description = dna.creative_brief?.signature ?? dna.identity.summary
+
+  return { description }
+}
 
 // Public page — no authenticated user, so we read with the service-role
 // client (server-only) and look up purely by the unguessable share slug.

@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-export const PROMPT_VERSION = 'v1'
+export const PROMPT_VERSION = 'v2'
 
 /** A single palette entry: a hex value plus a human-readable name. */
 const ColorSwatch = z.object({
@@ -42,6 +42,41 @@ export const AestheticDnaSchema = z.object({
     reference_note: z.string().min(1),
     recommended_adjustments: z.array(z.string().min(1)).min(1).max(8),
   }),
+  // Added in PROMPT_VERSION v2. Optional so profiles generated under v1
+  // (which never contained this field) still validate and render.
+  creative_brief: z
+    .object({
+      signature: z
+        .string()
+        .describe(
+          "One powerful sentence that captures the complete essence of this visual identity — written like a creative director's logline, not a description. Something the creator could use as their creative north star."
+        ),
+      colour_story: z
+        .string()
+        .describe(
+          '2-3 sentences explaining WHY this palette works together — the tension, harmony, or emotional logic between the colours. Not what the colours are, but what they do together and why that creates the identity\'s feeling.'
+        ),
+      shoot_next: z
+        .array(z.string())
+        .min(3)
+        .max(6)
+        .describe(
+          "3-6 specific content directions that would strengthen this identity. Each one is a concrete shooting direction, not a generic suggestion. E.g. 'Street scenes at blue hour where artificial light reflects on wet surfaces' not 'shoot more urban content'."
+        ),
+      avoid: z
+        .array(z.string())
+        .min(2)
+        .max(5)
+        .describe(
+          "2-5 specific things that would break this identity. Concrete and visual, not generic. E.g. 'Warm golden-hour portraits — the warmth conflicts with your cool-anchored palette' not 'avoid bad lighting'."
+        ),
+      evolution: z
+        .string()
+        .describe(
+          "One paragraph on where this identity could develop next — a natural evolution that extends rather than breaks the existing DNA. Specific to what's already in the feed, not generic creative advice."
+        ),
+    })
+    .optional(),
 })
 
 export type AestheticDna = z.infer<typeof AestheticDnaSchema>
@@ -61,7 +96,14 @@ Output ONLY valid JSON matching exactly this shape, with no markdown, no code fe
   "composition": { "tendencies": string[], "description": string },
   "mood": { "descriptors": string[], "description": string },
   "consistency_score": number,
-  "processing_directives": { "reference_note": string, "recommended_adjustments": string[] }
+  "processing_directives": { "reference_note": string, "recommended_adjustments": string[] },
+  "creative_brief": {
+    "signature": string,
+    "colour_story": string,
+    "shoot_next": string[],
+    "avoid": string[],
+    "evolution": string
+  }
 }
 
 Rules:
@@ -69,10 +111,24 @@ Rules:
 - "palette": 3-8 swatches, each with a valid 6-digit hex (e.g. "#1a1a2e") and a descriptive name.
 - "consistency_score": an integer 0-100 reflecting how visually unified the set is (higher = more consistent).
 - "reference_note": one to three sentences an editor could use as a north-star description of the look.
-- "recommended_adjustments": concrete editing moves (e.g. "Lift shadows +12, add a cool teal tint").`
+- "recommended_adjustments": concrete editing moves (e.g. "Lift shadows +12, add a cool teal tint").
+- "creative_brief.signature": a SINGLE sentence, written like a creative director's logline — a north star, not a description.
+- "creative_brief.colour_story": 2-3 sentences on WHY this palette works together — the tension, harmony, or emotional logic between the colours; what they do together, not what they are.
+- "creative_brief.shoot_next": 3-6 SPECIFIC, visual shooting directions tied to this identity (e.g. "Street scenes at blue hour where artificial light reflects on wet surfaces"), never generic advice like "shoot more urban content".
+- "creative_brief.avoid": 2-5 concrete, visual things that would break THIS identity, each referencing an actual element of it (e.g. "Warm golden-hour portraits — the warmth conflicts with your cool-anchored palette"), never generic notes like "avoid bad lighting".
+- "creative_brief.evolution": one paragraph on a natural next step that extends rather than breaks the DNA, referencing what is already in this feed.`
 
 export function buildUserPrompt(imageCount: number): string {
-  return `Here are ${imageCount} images from this creator's feed, provided as a single set. Analyse them together and return the Aesthetic DNA JSON described in your instructions. Sample actual colours from the images for the palette. Return JSON only.`
+  return `Here are ${imageCount} images from this creator's feed, provided as a single set. Analyse them together and return the Aesthetic DNA JSON described in your instructions. Sample actual colours from the images for the palette.
+
+Also fill the "creative_brief" object — this is a working creative brief, so be sharp and specific to THIS feed:
+- "signature": ONE sentence only, a creative-director logline the creator could use as their north star — not a description.
+- "colour_story": 2-3 sentences on why these colours work TOGETHER (the tension/harmony/emotional logic), not a list of what they are.
+- "shoot_next": 3-6 concrete, visual shooting directions tied to this identity — name the subject, light, and setting. No generic advice.
+- "avoid": 2-5 concrete, visual things that would break this exact identity, each naming the actual element of the DNA it conflicts with.
+- "evolution": one paragraph on a natural next step that extends this DNA, referencing what is already present in these images.
+
+Return JSON only.`
 }
 
 /** Strip a ```json ... ``` (or ``` ... ```) fence if the model added one. */
