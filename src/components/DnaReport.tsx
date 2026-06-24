@@ -184,7 +184,7 @@ export function DnaReport({
                 className="h-full rounded-full"
                 style={{
                   width: `${dna.consistency_score}%`,
-                  background: 'linear-gradient(90deg, var(--accent), var(--violet))',
+                  background: '#C4933A',
                 }}
               />
             </div>

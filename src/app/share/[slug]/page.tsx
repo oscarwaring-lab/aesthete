@@ -45,12 +45,39 @@ export default async function SharePage({
 
   const { data: profile } = await admin
     .from('aesthetic_profiles')
-    .select('dna, share_slug, created_at, image_urls')
+    .select('dna, share_slug, created_at, image_urls, deleted_at')
     .eq('share_slug', slug)
     .single()
 
   if (!profile) {
     notFound()
+  }
+
+  // Soft-deleted profiles are withdrawn from public view. Keep the editorial
+  // cream frame (nav + footer) but show a quiet "no longer available" notice
+  // in place of the report itself.
+  if (profile.deleted_at) {
+    return (
+      <div className="editorial flex min-h-screen flex-col">
+        <EditorialNav showLinks={false} />
+
+        <main className="share-main">
+          <div className="share-intro">
+            <p className="label">Aesthetic DNA · Shared specimen</p>
+            <h1>This report is no longer available.</h1>
+          </div>
+
+          <div className="share-cta">
+            <p>Want your own Aesthetic DNA report?</p>
+            <Link className="btn-prussian" href="/signup">
+              Analyse my feed →
+            </Link>
+          </div>
+        </main>
+
+        <EditorialFooter />
+      </div>
+    )
   }
 
   return (

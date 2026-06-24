@@ -1,16 +1,9 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { DnaStrand } from '@/components/DnaStrand'
 import { UpgradeSuccessBanner } from '@/components/UpgradeSuccessBanner'
 import { DashboardShell } from '@/components/DashboardShell'
+import { ProfileGrid, type ProfileRow } from '@/components/ProfileGrid'
 import { extractDnaAmbient } from '@/lib/dna-ambient'
-import type { AestheticDna } from '@/lib/aesthetic-dna'
-
-type ProfileRow = {
-  id: string
-  dna: AestheticDna
-  created_at: string
-}
 
 type Subscription = {
   tier: string
@@ -30,6 +23,7 @@ export default async function DashboardPage({
     supabase
       .from('aesthetic_profiles')
       .select('id, dna, created_at')
+      .is('deleted_at', null)
       .order('created_at', { ascending: false }),
     supabase
       .from('user_subscriptions')
@@ -147,18 +141,7 @@ export default async function DashboardPage({
       {rows.length === 0 ? (
         <EmptyState />
       ) : (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: 14,
-          }}
-        >
-          {rows.map((profile) => (
-            <ProfileCard key={profile.id} profile={profile} />
-          ))}
-          <BlankCanvasCard />
-        </div>
+        <ProfileGrid profiles={rows} />
       )}
 
       {/* ─── Footer strip ───────────────────────────────────────── */}
@@ -183,59 +166,6 @@ export default async function DashboardPage({
       </div>
       </div>
     </DashboardShell>
-  )
-}
-
-function ProfileCard({ profile }: { profile: ProfileRow }) {
-  const dna = profile.dna
-  const date = new Date(profile.created_at).toLocaleDateString('en-GB', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  })
-
-  return (
-    <div>
-      <Link href={`/dashboard/report/${profile.id}`} className="cc">
-        <DnaStrand dna={dna} />
-
-        <hr
-          style={{
-            height: 1,
-            border: 'none',
-            background: 'rgba(255,255,255,0.08)',
-            margin: '10px 0 8px',
-          }}
-        />
-
-        <div
-          style={{
-            fontFamily: 'var(--font-playfair), Georgia, serif',
-            fontStyle: 'italic',
-            fontSize: 12,
-            color: '#f2f2f5',
-            lineHeight: 1.3,
-            marginBottom: 6,
-          }}
-        >
-          {dna.identity.archetype}
-        </div>
-
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-          <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.32)', letterSpacing: '0.06em' }}>
-            {date}
-          </span>
-          <span style={{ fontSize: 10, color: '#C4933A', letterSpacing: '0.04em', fontWeight: 500 }}>
-            {dna.consistency_score}/100
-          </span>
-        </div>
-      </Link>
-
-      {/* Sits below the card, separate from its click target. */}
-      <Link href={`/dashboard/check/${profile.id}`} className="check-post-link">
-        Check a post <span aria-hidden>→</span>
-      </Link>
-    </div>
   )
 }
 

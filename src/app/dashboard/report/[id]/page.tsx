@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
@@ -16,12 +16,17 @@ export default async function ReportPage({
   // RLS ("Users read own profiles") restricts this to the owner.
   const { data: profile } = await supabase
     .from('aesthetic_profiles')
-    .select('id, dna, share_slug, created_at, image_urls')
+    .select('id, dna, share_slug, created_at, image_urls, deleted_at')
     .eq('id', id)
     .single()
 
   if (!profile) {
     notFound()
+  }
+
+  // A soft-deleted profile is hidden everywhere — bounce back to the dashboard.
+  if (profile.deleted_at) {
+    redirect('/dashboard')
   }
 
   return (
