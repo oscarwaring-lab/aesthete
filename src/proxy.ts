@@ -41,6 +41,18 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
+  // Redirect while preserving any refreshed auth cookies that getUser() wrote
+  // onto `response`. A bare NextResponse.redirect() would drop them, leaving the
+  // browser with a stale/rotated token — the session then fails to persist
+  // through the redirect and the user has to retry the sign-in several times.
+  const redirectTo = (url: URL) => {
+    const redirect = NextResponse.redirect(url)
+    for (const cookie of response.cookies.getAll()) {
+      redirect.cookies.set(cookie)
+    }
+    return redirect
+  }
+
   const path = request.nextUrl.pathname
   const isProtected = path.startsWith('/dashboard')
 
@@ -48,7 +60,7 @@ export async function proxy(request: NextRequest) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     url.searchParams.set('next', path)
-    return NextResponse.redirect(url)
+    return redirectTo(url)
   }
 
   // Signed-in users shouldn't sit on the auth screens.
@@ -56,7 +68,7 @@ export async function proxy(request: NextRequest) {
     const url = request.nextUrl.clone()
     url.pathname = '/dashboard'
     url.search = ''
-    return NextResponse.redirect(url)
+    return redirectTo(url)
   }
 
   return response
