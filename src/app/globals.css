@@ -43,6 +43,33 @@
 
   --serif: var(--font-playfair), Georgia, serif;
   --sans: var(--font-inter), -apple-system, "Helvetica Neue", sans-serif;
+
+  /* ─── DNA report card — adaptive light/dark ───────────────────────
+   * Defaults below render the dark studio card (unchanged from before).
+   * A creator whose dominant palette colour is bright flips these to the
+   * cream variant via [data-theme="light"] on the card root. The amber
+   * accent, DNA strand bands and the score bar are deliberately identical
+   * in both modes, so they live outside this token set.
+   * --card-text-rgb is the bare channel behind every translucent text and
+   * hairline in the card body; keeping it as a channel preserves the dark
+   * card's exact opacity hierarchy while letting light mode invert it. */
+  --card-bg: #101014;
+  --card-bg-inner: #101014;
+  --card-text: #f2f2f5;
+  --card-text-rgb: 255, 255, 255;
+  --card-muted: #a0a0ab;
+  --card-border: rgba(255, 255, 255, 0.08);
+  --card-cborder: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="light"] {
+  --card-bg:       #faf9f5;
+  --card-bg-inner: #f3f1ea;
+  --card-text:     #111110;
+  --card-text-rgb: 17, 17, 16;
+  --card-muted:    rgba(17, 17, 16, 0.5);
+  --card-border:   rgba(17, 17, 16, 0.08);
+  --card-cborder:  rgba(196, 147, 58, 0.22);
 }
 
 @theme inline {

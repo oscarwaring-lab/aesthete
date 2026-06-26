@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Check, Copy, Sparkles } from 'lucide-react'
+import { isLightPalette } from '@/lib/colour'
 import type { AestheticDna } from '@/lib/aesthetic-dna'
 
 const MONTHS = [
@@ -21,9 +22,13 @@ function formatReportDate(date: string): string {
 }
 
 /**
- * The centrepiece. Renders an Aesthetic DNA profile as a premium dark card.
- * Used by both the authenticated report page and the public share page.
+ * The centrepiece. Renders an Aesthetic DNA profile as a premium card that
+ * embodies the creator's aesthetic: a bright dominant palette colour earns a
+ * cream card, a dark one keeps the dark studio card. The light/dark switch is
+ * purely visual — it flips the `--card-*` tokens via `data-theme` and changes
+ * no data. The amber accent, DNA bands and score bar are identical in both.
  *
+ * Used by both the authenticated report page and the public share page.
  * `shareSlug` enables the copy-link button. `createdAt` is optional metadata.
  */
 export function DnaReport({
@@ -37,11 +42,24 @@ export function DnaReport({
   createdAt?: string
   imageUrls?: string[] | null
 }) {
+  const lightMode = isLightPalette(dna.color.palette[0]?.hex ?? '#111110')
+
   return (
     <div className="mx-auto w-full max-w-2xl">
-      <div className="overflow-hidden rounded-3xl border border-border bg-panel">
+      <div
+        data-theme={lightMode ? 'light' : 'dark'}
+        className="overflow-hidden rounded-3xl border"
+        style={{
+          background: 'var(--card-bg)',
+          color: 'var(--card-text)',
+          borderColor: 'var(--card-cborder)',
+        }}
+      >
         {/* Header */}
-        <div className="relative px-8 pt-10 pb-8">
+        <div
+          className="relative px-8 pt-10 pb-8"
+          style={{ background: 'var(--card-bg-inner)' }}
+        >
           <div
             className="pointer-events-none absolute inset-x-0 top-0 h-40 opacity-30"
             style={{
@@ -50,10 +68,16 @@ export function DnaReport({
             }}
           />
           <div className="relative">
-            <span className="text-xs font-medium uppercase tracking-[0.2em] text-muted">
+            <span
+              className="text-xs font-medium uppercase tracking-[0.2em]"
+              style={{ color: 'var(--card-muted)' }}
+            >
               Aesthetic DNA
             </span>
-            <h1 className="mt-2 text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
+            <h1
+              className="mt-2 text-4xl font-semibold leading-tight tracking-tight sm:text-5xl"
+              style={{ color: 'var(--card-text)' }}
+            >
               {dna.identity.archetype}
             </h1>
             {dna.creative_brief?.signature && (
@@ -62,7 +86,7 @@ export function DnaReport({
                   fontFamily: 'var(--font-playfair), serif',
                   fontStyle: 'italic',
                   fontSize: 18,
-                  color: 'rgba(255,255,255,0.65)',
+                  color: 'rgba(var(--card-text-rgb), 0.65)',
                   lineHeight: 1.5,
                   maxWidth: 600,
                   marginTop: 8,
@@ -71,7 +95,10 @@ export function DnaReport({
                 {dna.creative_brief.signature}
               </p>
             )}
-            <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted">
+            <p
+              className="mt-3 max-w-prose text-sm leading-relaxed"
+              style={{ color: 'var(--card-muted)' }}
+            >
               {dna.identity.summary}
             </p>
           </div>
@@ -84,14 +111,22 @@ export function DnaReport({
               {dna.color.palette.map((swatch, i) => (
                 <div key={`${swatch.hex}-${i}`} className="flex flex-col items-center gap-2">
                   <div
-                    className="h-16 w-16 rounded-2xl border border-white/10 shadow-inner"
-                    style={{ backgroundColor: swatch.hex }}
+                    className="h-16 w-16 rounded-2xl border shadow-inner"
+                    style={{
+                      backgroundColor: swatch.hex,
+                      borderColor: 'rgba(var(--card-text-rgb), 0.1)',
+                    }}
                   />
                   <div className="text-center">
-                    <div className="font-mono text-[11px] uppercase text-foreground">
+                    <div
+                      className="font-mono text-[11px] uppercase"
+                      style={{ color: 'var(--card-text)' }}
+                    >
                       {swatch.hex}
                     </div>
-                    <div className="text-[10px] text-muted">{swatch.name}</div>
+                    <div className="text-[10px]" style={{ color: 'var(--card-muted)' }}>
+                      {swatch.name}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -100,7 +135,7 @@ export function DnaReport({
               <p
                 style={{
                   fontSize: 14,
-                  color: 'rgba(255,255,255,0.5)',
+                  color: 'rgba(var(--card-text-rgb), 0.5)',
                   lineHeight: 1.7,
                   fontStyle: 'italic',
                   marginTop: 12,
@@ -174,12 +209,20 @@ export function DnaReport({
           {/* Consistency score */}
           <Section title="Consistency score">
             <div className="flex items-end gap-4">
-              <span className="text-5xl font-semibold leading-none tracking-tight">
+              <span
+                className="text-5xl font-semibold leading-none tracking-tight"
+                style={{ color: 'var(--card-text)' }}
+              >
                 {dna.consistency_score}
-                <span className="text-xl text-muted">/100</span>
+                <span className="text-xl" style={{ color: 'var(--card-muted)' }}>
+                  /100
+                </span>
               </span>
             </div>
-            <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-white/5">
+            <div
+              className="mt-3 h-2.5 w-full overflow-hidden rounded-full"
+              style={{ background: 'rgba(var(--card-text-rgb), 0.05)' }}
+            >
               <div
                 className="h-full rounded-full"
                 style={{
@@ -193,8 +236,11 @@ export function DnaReport({
           {/* Creative brief — only present on v2+ profiles */}
           {dna.creative_brief && (
             <section>
-              <hr style={{ border: 0, borderTop: '1px solid rgba(255,255,255,0.055)', margin: 0 }} />
-              <h2 className="mb-5 mt-8 text-xs font-medium uppercase tracking-[0.18em] text-muted">
+              <hr style={{ border: 0, borderTop: '1px solid rgba(var(--card-text-rgb), 0.055)', margin: 0 }} />
+              <h2
+                className="mb-5 mt-8 text-xs font-medium uppercase tracking-[0.18em]"
+                style={{ color: 'var(--card-muted)' }}
+              >
                 Creative brief
               </h2>
 
@@ -213,7 +259,7 @@ export function DnaReport({
                 {dna.creative_brief.shoot_next.map((item, i) => (
                   <div key={`shoot-${i}`} style={{ display: 'flex', gap: 10 }}>
                     <span style={{ color: 'rgba(196,147,58,0.9)', flexShrink: 0 }}>→</span>
-                    <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)', lineHeight: 1.6 }}>
+                    <span style={{ fontSize: 14, color: 'rgba(var(--card-text-rgb), 0.7)', lineHeight: 1.6 }}>
                       {item}
                     </span>
                   </div>
@@ -226,7 +272,7 @@ export function DnaReport({
                   fontSize: 10,
                   textTransform: 'uppercase',
                   letterSpacing: '0.18em',
-                  color: 'rgba(255,255,255,0.35)',
+                  color: 'rgba(var(--card-text-rgb), 0.35)',
                   marginTop: 28,
                 }}
               >
@@ -236,8 +282,8 @@ export function DnaReport({
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>
                   {dna.creative_brief.avoid.map((item, i) => (
                     <div key={`avoid-${i}`} style={{ display: 'flex', gap: 10 }}>
-                      <span style={{ color: 'rgba(255,255,255,0.3)', flexShrink: 0 }}>×</span>
-                      <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.45)', lineHeight: 1.6 }}>
+                      <span style={{ color: 'rgba(var(--card-text-rgb), 0.3)', flexShrink: 0 }}>×</span>
+                      <span style={{ fontSize: 14, color: 'rgba(var(--card-text-rgb), 0.45)', lineHeight: 1.6 }}>
                         {item}
                       </span>
                     </div>
@@ -253,7 +299,7 @@ export function DnaReport({
                       fontSize: 10,
                       textTransform: 'uppercase',
                       letterSpacing: '0.18em',
-                      color: 'rgba(255,255,255,0.35)',
+                      color: 'rgba(var(--card-text-rgb), 0.35)',
                       marginTop: 28,
                     }}
                   >
@@ -264,7 +310,7 @@ export function DnaReport({
                       fontFamily: 'var(--font-playfair), serif',
                       fontStyle: 'italic',
                       fontSize: 15,
-                      color: 'rgba(255,255,255,0.6)',
+                      color: 'rgba(var(--card-text-rgb), 0.6)',
                       lineHeight: 1.75,
                       marginTop: 10,
                     }}
@@ -278,12 +324,22 @@ export function DnaReport({
 
           {/* Technical direction (processing directives) */}
           <Section title="Technical direction">
-            <blockquote className="rounded-2xl border-l-2 border-[var(--accent)] bg-white/[0.03] px-5 py-4 text-sm italic leading-relaxed text-foreground/90">
+            <blockquote
+              className="rounded-2xl border-l-2 border-[var(--accent)] px-5 py-4 text-sm italic leading-relaxed"
+              style={{
+                background: 'rgba(var(--card-text-rgb), 0.03)',
+                color: 'rgba(var(--card-text-rgb), 0.9)',
+              }}
+            >
               {dna.processing_directives.reference_note}
             </blockquote>
             <ul className="mt-4 space-y-2">
               {dna.processing_directives.recommended_adjustments.map((adj, i) => (
-                <li key={i} className="flex gap-2 text-sm text-muted">
+                <li
+                  key={i}
+                  className="flex gap-2 text-sm"
+                  style={{ color: 'var(--card-muted)' }}
+                >
                   <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-[var(--violet)]" />
                   {adj}
                 </li>
@@ -293,13 +349,18 @@ export function DnaReport({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between border-t border-border px-8 py-5">
-          <div className="flex items-center gap-1.5 text-xs text-muted">
+        <div
+          className="flex items-center justify-between border-t px-8 py-5"
+          style={{ borderColor: 'var(--card-border)' }}
+        >
+          <div className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--card-muted)' }}>
             <Sparkles className="h-3.5 w-3.5 text-[var(--violet)]" />
             Refined with Aesthete
           </div>
           {createdAt && (
-            <span className="text-xs text-muted">{formatReportDate(createdAt)}</span>
+            <span className="text-xs" style={{ color: 'var(--card-muted)' }}>
+              {formatReportDate(createdAt)}
+            </span>
           )}
         </div>
       </div>
@@ -354,11 +415,18 @@ function Section({
 }) {
   return (
     <section>
-      <h2 className="mb-3 text-xs font-medium uppercase tracking-[0.18em] text-muted">
+      <h2
+        className="mb-3 text-xs font-medium uppercase tracking-[0.18em]"
+        style={{ color: 'var(--card-muted)' }}
+      >
         {title}
       </h2>
       {children}
-      {note && <p className="mt-3 text-sm leading-relaxed text-muted">{note}</p>}
+      {note && (
+        <p className="mt-3 text-sm leading-relaxed" style={{ color: 'var(--card-muted)' }}>
+          {note}
+        </p>
+      )}
     </section>
   )
 }
@@ -366,11 +434,12 @@ function Section({
 function Pill({ children, subtle }: { children: React.ReactNode; subtle?: boolean }) {
   return (
     <span
-      className={`rounded-full px-3 py-1.5 text-sm ${
+      className="rounded-full px-3 py-1.5 text-sm"
+      style={
         subtle
-          ? 'border border-border text-foreground/80'
-          : 'bg-[var(--accent)]/15 text-[var(--foreground)]'
-      }`}
+          ? { border: '1px solid var(--card-border)', color: 'rgba(var(--card-text-rgb), 0.8)' }
+          : { background: 'color-mix(in srgb, var(--accent) 15%, transparent)', color: 'var(--card-text)' }
+      }
     >
       {children}
     </span>
@@ -379,9 +448,19 @@ function Pill({ children, subtle }: { children: React.ReactNode; subtle?: boolea
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-border bg-white/[0.02] px-4 py-3">
-      <div className="text-[10px] font-medium uppercase tracking-wider text-muted">{label}</div>
-      <div className="mt-1 text-sm text-foreground">{value}</div>
+    <div
+      className="rounded-2xl border px-4 py-3"
+      style={{
+        borderColor: 'var(--card-border)',
+        background: 'rgba(var(--card-text-rgb), 0.02)',
+      }}
+    >
+      <div className="text-[10px] font-medium uppercase tracking-wider" style={{ color: 'var(--card-muted)' }}>
+        {label}
+      </div>
+      <div className="mt-1 text-sm" style={{ color: 'var(--card-text)' }}>
+        {value}
+      </div>
     </div>
   )
 }
