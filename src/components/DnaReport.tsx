@@ -64,7 +64,7 @@ export function DnaReport({
             className="pointer-events-none absolute inset-x-0 top-0 h-40 opacity-30"
             style={{
               background:
-                'radial-gradient(ellipse at top, var(--accent), transparent 70%)',
+                'radial-gradient(ellipse at top, #C4933A, transparent 70%)',
             }}
           />
           <div className="relative">
@@ -325,7 +325,7 @@ export function DnaReport({
           {/* Technical direction (processing directives) */}
           <Section title="Technical direction">
             <blockquote
-              className="rounded-2xl border-l-2 border-[var(--accent)] px-5 py-4 text-sm italic leading-relaxed"
+              className="rounded-2xl border-l-2 border-[#C4933A] px-5 py-4 text-sm italic leading-relaxed"
               style={{
                 background: 'rgba(var(--card-text-rgb), 0.03)',
                 color: 'rgba(var(--card-text-rgb), 0.9)',
@@ -340,7 +340,7 @@ export function DnaReport({
                   className="flex gap-2 text-sm"
                   style={{ color: 'var(--card-muted)' }}
                 >
-                  <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-[var(--violet)]" />
+                  <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-[#C4933A]" />
                   {adj}
                 </li>
               ))}
@@ -354,7 +354,7 @@ export function DnaReport({
           style={{ borderColor: 'var(--card-border)' }}
         >
           <div className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--card-muted)' }}>
-            <Sparkles className="h-3.5 w-3.5 text-[var(--violet)]" />
+            <Sparkles className="h-3.5 w-3.5 text-[#C4933A]" />
             Refined with Aesthete
           </div>
           {createdAt && (
@@ -391,7 +391,7 @@ function ShareBar({ slug }: { slug: string }) {
     >
       {copied ? (
         <>
-          <Check className="h-4 w-4 text-[var(--accent)]" />
+          <Check className="h-4 w-4 text-[#C4933A]" />
           Link copied
         </>
       ) : (
@@ -438,7 +438,7 @@ function Pill({ children, subtle }: { children: React.ReactNode; subtle?: boolea
       style={
         subtle
           ? { border: '1px solid var(--card-border)', color: 'rgba(var(--card-text-rgb), 0.8)' }
-          : { background: 'color-mix(in srgb, var(--accent) 15%, transparent)', color: 'var(--card-text)' }
+          : { background: 'color-mix(in srgb, #C4933A 15%, transparent)', color: 'var(--card-text)' }
       }
     >
       {children}
