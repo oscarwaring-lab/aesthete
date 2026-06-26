@@ -20,6 +20,23 @@ const MIN_IMAGES = 3
 const MAX_IMAGES = 12
 const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
 
+// Content pillars: a standard profile can carry at most MAX_PILLARS pillar
+// analyses, each labelled with a short pillar_name.
+const MAX_PILLAR_NAME = 30
+const MAX_PILLARS = 3
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+/** Trim, strip control chars, collapse whitespace and cap at MAX_PILLAR_NAME. */
+function sanitisePillarName(raw: FormDataEntryValue | null): string | null {
+  if (typeof raw !== 'string') return null
+  const cleaned = raw
+    .replace(/[\x00-\x1f\x7f]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, MAX_PILLAR_NAME)
+  return cleaned.length > 0 ? cleaned : null
+}
+
 const STORAGE_BUCKET = 'aesthetic-images'
 const MAX_STORED_IMAGES = 4
 
@@ -151,6 +168,44 @@ export async function POST(request: Request) {
     )
   }
 
+  // 2b. Optional content-pillar fields. A pillar analysis hangs off a parent
+  //     standard profile and carries a short label. Both are validated/sanitised
+  //     here; the DNA generation below is identical for standard and pillar runs.
+  const pillarName = sanitisePillarName(formData.get('pillar_name'))
+
+  const parentIdRaw = formData.get('parent_profile_id')
+  let parentProfileId: string | null = null
+  if (typeof parentIdRaw === 'string' && parentIdRaw.length > 0) {
+    if (!UUID_RE.test(parentIdRaw)) {
+      return NextResponse.json({ error: 'Invalid parent profile.' }, { status: 400 })
+    }
+    parentProfileId = parentIdRaw
+  }
+
+  // Enforce the per-parent pillar cap server-side. Soft-deleted pillars are
+  // excluded so the count matches what the dashboard shows (and a deleted
+  // pillar frees a slot).
+  if (parentProfileId) {
+    const { count, error: countError } = await admin
+      .from('aesthetic_profiles')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .eq('parent_profile_id', parentProfileId)
+      .eq('analysis_type', 'pillar')
+      .is('deleted_at', null)
+
+    if (countError) {
+      console.error('Failed to count existing pillars:', countError)
+      return NextResponse.json({ error: 'Could not verify your pillars.' }, { status: 500 })
+    }
+    if ((count ?? 0) >= MAX_PILLARS) {
+      return NextResponse.json(
+        { error: `Maximum ${MAX_PILLARS} pillars per profile` },
+        { status: 400 }
+      )
+    }
+  }
+
   const imageParts: ChatCompletionContentPart[] = []
   const fileBuffers: Buffer[] = []
   for (const file of files) {
@@ -246,7 +301,12 @@ export async function POST(request: Request) {
   }
 
   // 6. Persist with the service-role client (RLS-bypassing, server-only).
+  //    A named pillar becomes a 'pillar' row linked to its parent; otherwise
+  //    the row stays a 'standard' analysis (the column default).
   const shareSlug = generateSlug()
+  const pillarFields = pillarName
+    ? { analysis_type: 'pillar', pillar_name: pillarName, parent_profile_id: parentProfileId }
+    : {}
 
   const { data: profile, error: dbError } = await admin
     .from('aesthetic_profiles')
@@ -261,6 +321,7 @@ export async function POST(request: Request) {
       model: MODEL,
       prompt_version: PROMPT_VERSION,
       share_slug: shareSlug,
+      ...pillarFields,
     })
     .select('id, share_slug')
     .single()

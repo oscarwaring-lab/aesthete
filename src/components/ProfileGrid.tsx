@@ -10,7 +10,12 @@ export type ProfileRow = {
   id: string
   dna: AestheticDna
   created_at: string
+  analysis_type: string | null
+  pillar_name: string | null
+  parent_profile_id: string | null
 }
+
+const MAX_PILLARS = 3
 
 export type CheckPoint = { score: number; date: string }
 export type ChecksHistory = Record<string, CheckPoint[]>
@@ -32,23 +37,149 @@ export function ProfileGrid({
     setRows((prev) => prev.filter((p) => p.id !== id))
   }
 
+  // Split client-side: standard profiles are top-level cards; pillars hang off
+  // their parent. A null/absent analysis_type is treated as standard.
+  const standard = rows.filter((p) => p.analysis_type !== 'pillar')
+  const pillarsByParent: Record<string, ProfileRow[]> = {}
+  for (const p of rows) {
+    if (p.analysis_type === 'pillar' && p.parent_profile_id) {
+      ;(pillarsByParent[p.parent_profile_id] ??= []).push(p)
+    }
+  }
+
   return (
     <div
       style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(3, 1fr)',
         gap: 14,
+        alignItems: 'start',
       }}
     >
-      {rows.map((profile) => (
-        <ProfileCard
-          key={profile.id}
-          profile={profile}
-          checks={checksHistory[profile.id] ?? []}
-          onDeleted={removeRow}
-        />
-      ))}
+      {standard.map((profile) => {
+        const pillars = pillarsByParent[profile.id] ?? []
+        return (
+          <div key={profile.id}>
+            <ProfileCard
+              profile={profile}
+              checks={checksHistory[profile.id] ?? []}
+              onDeleted={removeRow}
+            />
+
+            {pillars.length < MAX_PILLARS && (
+              <Link
+                href={`/dashboard/pillar/${profile.id}`}
+                style={{
+                  display: 'block',
+                  marginTop: 8,
+                  fontFamily: 'var(--font-inter), sans-serif',
+                  fontSize: 10,
+                  color: 'rgba(242,242,245,0.3)',
+                }}
+              >
+                + Add content pillar
+              </Link>
+            )}
+
+            {pillars.map((pillar) => (
+              <PillarSubCard key={pillar.id} profile={pillar} onDeleted={removeRow} />
+            ))}
+          </div>
+        )
+      })}
       <BlankCanvasCard />
+    </div>
+  )
+}
+
+/**
+ * A pillar analysis rendered beneath its parent standard card: a labelled
+ * mini-card linking to its own report, with the same quiet two-step delete.
+ */
+function PillarSubCard({
+  profile,
+  onDeleted,
+}: {
+  profile: ProfileRow
+  onDeleted: (id: string) => void
+}) {
+  const dna = profile.dna
+  const swatches = (dna.color?.palette ?? []).slice(0, 3)
+
+  return (
+    <div style={{ marginTop: 8 }}>
+      <Link
+        href={`/dashboard/report/${profile.id}`}
+        style={{
+          display: 'block',
+          background: '#1a1a24',
+          borderLeft: '2px solid rgba(196,147,58,0.4)',
+          padding: '10px 12px',
+          textDecoration: 'none',
+        }}
+      >
+        <div
+          style={{
+            fontFamily: 'var(--font-inter), sans-serif',
+            fontSize: 10,
+            color: '#C4933A',
+            textTransform: 'uppercase',
+            letterSpacing: '0.15em',
+          }}
+        >
+          {profile.pillar_name}
+        </div>
+
+        <div
+          style={{
+            fontFamily: 'var(--font-playfair), Georgia, serif',
+            fontSize: 14,
+            color: 'var(--light, #f2f2f5)',
+            lineHeight: 1.3,
+            marginTop: 4,
+          }}
+        >
+          {dna.identity.archetype}
+        </div>
+
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginTop: 8,
+          }}
+        >
+          <div style={{ display: 'flex', gap: 4 }}>
+            {swatches.map((swatch, i) => (
+              <span
+                key={`${swatch.hex}-${i}`}
+                style={{
+                  width: 16,
+                  height: 16,
+                  borderRadius: 4,
+                  background: swatch.hex,
+                  border: '1px solid rgba(255,255,255,0.1)',
+                }}
+              />
+            ))}
+          </div>
+          <span
+            style={{
+              fontFamily: 'var(--font-inter), sans-serif',
+              fontSize: 12,
+              color: '#C4933A',
+            }}
+          >
+            {dna.consistency_score}/100
+          </span>
+        </div>
+      </Link>
+
+      {/* Delete sits below the card, separate from its click target. */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 4 }}>
+        <DeleteControl profileId={profile.id} onDeleted={onDeleted} />
+      </div>
     </div>
   )
 }

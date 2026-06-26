@@ -22,7 +22,7 @@ export default async function DashboardPage({
   const [{ data: profiles }, { data: subscriptionRow }] = await Promise.all([
     supabase
       .from('aesthetic_profiles')
-      .select('id, dna, created_at')
+      .select('id, dna, created_at, analysis_type, pillar_name, parent_profile_id')
       .is('deleted_at', null)
       .order('created_at', { ascending: false }),
     supabase
