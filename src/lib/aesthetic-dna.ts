@@ -109,7 +109,17 @@ Output ONLY valid JSON matching exactly this shape, with no markdown, no code fe
 Rules:
 - "keywords": 3-10 single words or short phrases.
 - "palette": 3-8 swatches, each with a valid 6-digit hex (e.g. "#1a1a2e") and a descriptive name.
-- "consistency_score": an integer 0-100 reflecting how visually unified the set is (higher = more consistent).
+- "consistency_score": an integer 0-100 reflecting how visually unified the set is (higher = more consistent). DERIVE this from evidence — do not guess a plausible-looking number, and never default to a round figure. Before you settle on a value, work through these steps internally:
+    1. Identify the specific deviations — name the images or recurring patterns that break the dominant aesthetic (an off-palette shot, a composition that defies the pattern, a tonal or mood outlier).
+    2. Count and weight them. Colour-grade and palette breaks are the heaviest; tonal/mood breaks are moderate; composition breaks are the lightest. Two palette breaks hurt the score more than two framing quirks.
+    3. Select the band below whose description the weighted evidence actually matches — then choose the precise integer within that band that the evidence supports.
+  The score MUST follow from the deviation list above. If you cannot name the deviations that justify a number, the number is wrong. Do NOT round to a multiple of 5 unless the evidence precisely lands there — a score like 87 or 73 is expected far more often than 85 or 75.
+  Scoring bands:
+    95-100: Virtually no deviations. Every image shares colour grade, tone, composition language, and mood. A professional creative director could mistake it for a single shoot.
+    85-94:  Strong identity with 1-3 minor deviations — a slightly off-palette image, one composition that breaks the pattern. Core identity intact.
+    70-84:  Clear aesthetic direction but inconsistent execution. 4-6 noticeable deviations across colour, tone, or mood. Identity readable but unreliable.
+    50-69:  Partial identity. Some images cohere, others actively contradict the established palette or mood. Brand deals would notice.
+    Below 50: No reliable visual identity. Major inconsistencies across colour, tone, composition, and mood throughout.
 - "reference_note": one to three sentences an editor could use as a north-star description of the look.
 - "recommended_adjustments": concrete editing moves (e.g. "Lift shadows +12, add a cool teal tint").
 - "creative_brief.signature": a SINGLE sentence, written like a creative director's logline — a north star, not a description.
