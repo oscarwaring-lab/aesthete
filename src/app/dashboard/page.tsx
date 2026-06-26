@@ -33,6 +33,32 @@ export default async function DashboardPage({
 
   const rows = (profiles ?? []) as ProfileRow[]
 
+  // Continuity score history for every profile, in one query. RLS scopes the
+  // rows to the signed-in user. Grouped by profile_id and ordered oldest-first
+  // so each sparkline reads left-to-right in time.
+  const checksHistory: Record<string, { score: number; date: string }[]> = {}
+  if (rows.length > 0) {
+    const { data: checks } = await supabase
+      .from('continuity_checks')
+      .select('profile_id, overall_score, created_at')
+      .in(
+        'profile_id',
+        rows.map((p) => p.id)
+      )
+      .order('created_at', { ascending: true })
+
+    for (const check of (checks ?? []) as {
+      profile_id: string
+      overall_score: number
+      created_at: string
+    }[]) {
+      ;(checksHistory[check.profile_id] ??= []).push({
+        score: check.overall_score,
+        date: check.created_at,
+      })
+    }
+  }
+
   // Tune the room to the user's most recent DNA. Falls back to Prussian blue
   // when no profile exists yet — the space is ready, but not yet personalised.
   const { dominantHex, paletteHex } = extractDnaAmbient(
@@ -141,7 +167,7 @@ export default async function DashboardPage({
       {rows.length === 0 ? (
         <EmptyState />
       ) : (
-        <ProfileGrid profiles={rows} />
+        <ProfileGrid profiles={rows} checksHistory={checksHistory} />
       )}
 
       {/* ─── Footer strip ───────────────────────────────────────── */}

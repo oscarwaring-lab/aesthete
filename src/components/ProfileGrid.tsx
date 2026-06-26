@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { DnaStrand } from '@/components/DnaStrand'
+import { SparklineChart } from '@/components/SparklineChart'
 import type { AestheticDna } from '@/lib/aesthetic-dna'
 
 export type ProfileRow = {
@@ -11,11 +12,20 @@ export type ProfileRow = {
   created_at: string
 }
 
+export type CheckPoint = { score: number; date: string }
+export type ChecksHistory = Record<string, CheckPoint[]>
+
 /**
  * Client-side profile grid. Holds the list in local state so a soft-delete
  * removes the card immediately, with no full-page reload.
  */
-export function ProfileGrid({ profiles }: { profiles: ProfileRow[] }) {
+export function ProfileGrid({
+  profiles,
+  checksHistory,
+}: {
+  profiles: ProfileRow[]
+  checksHistory: ChecksHistory
+}) {
   const [rows, setRows] = useState<ProfileRow[]>(profiles)
 
   function removeRow(id: string) {
@@ -31,7 +41,12 @@ export function ProfileGrid({ profiles }: { profiles: ProfileRow[] }) {
       }}
     >
       {rows.map((profile) => (
-        <ProfileCard key={profile.id} profile={profile} onDeleted={removeRow} />
+        <ProfileCard
+          key={profile.id}
+          profile={profile}
+          checks={checksHistory[profile.id] ?? []}
+          onDeleted={removeRow}
+        />
       ))}
       <BlankCanvasCard />
     </div>
@@ -40,9 +55,11 @@ export function ProfileGrid({ profiles }: { profiles: ProfileRow[] }) {
 
 function ProfileCard({
   profile,
+  checks,
   onDeleted,
 }: {
   profile: ProfileRow
+  checks: CheckPoint[]
   onDeleted: (id: string) => void
 }) {
   const dna = profile.dna
@@ -89,6 +106,8 @@ function ProfileCard({
         </div>
       </Link>
 
+      <ContinuityHistory checks={checks} />
+
       {/* Sits below the card, separate from its click target. */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Link href={`/dashboard/check/${profile.id}`} className="check-post-link">
@@ -96,6 +115,77 @@ function ProfileCard({
         </Link>
         <DeleteControl profileId={profile.id} onDeleted={onDeleted} />
       </div>
+    </div>
+  )
+}
+
+/**
+ * Continuity score history for a single profile: a labelled most-recent score,
+ * a trend glyph, and a mini sparkline of every check run against the profile.
+ * Falls back to a quiet "no checks yet" line before the first check.
+ */
+function ContinuityHistory({ checks }: { checks: CheckPoint[] }) {
+  if (checks.length === 0) {
+    return (
+      <div
+        style={{
+          fontFamily: 'var(--font-inter), sans-serif',
+          fontSize: 10,
+          color: 'rgba(242,242,245,0.25)',
+          margin: '8px 0 2px',
+        }}
+      >
+        No continuity checks yet
+      </div>
+    )
+  }
+
+  const scores = checks.map((c) => c.score)
+  const latest = scores[scores.length - 1]
+
+  // Trend compares the two most recent checks. A single check has no trend.
+  let trend = '—'
+  if (scores.length > 1) {
+    const prev = scores[scores.length - 2]
+    if (latest > prev) trend = '↑'
+    else if (latest < prev) trend = '↓'
+  }
+
+  return (
+    <div style={{ margin: '8px 0 2px' }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'baseline',
+          marginBottom: 4,
+        }}
+      >
+        <span
+          style={{
+            fontFamily: 'var(--font-inter), sans-serif',
+            fontSize: 9,
+            color: 'rgba(242,242,245,0.35)',
+            letterSpacing: '0.15em',
+            textTransform: 'uppercase',
+          }}
+        >
+          Continuity
+        </span>
+        <span
+          style={{
+            fontFamily: 'var(--font-inter), sans-serif',
+            fontSize: 13,
+            color: '#C4933A',
+          }}
+        >
+          {latest}
+          <span style={{ marginLeft: 4 }} aria-hidden>
+            {trend}
+          </span>
+        </span>
+      </div>
+      <SparklineChart scores={scores} />
     </div>
   )
 }
