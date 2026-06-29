@@ -8,6 +8,7 @@ import { compressImage } from '@/lib/compress-image'
 const MIN_IMAGES = 3
 const MAX_IMAGES = 12
 const MAX_FILE_BYTES = 8 * 1024 * 1024
+const MAX_HANDLE = 30
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 
 type Selected = { file: File; url: string; id: string }
@@ -16,6 +17,7 @@ export default function UploadPage() {
   const router = useRouter()
   const inputRef = useRef<HTMLInputElement>(null)
 
+  const [handle, setHandle] = useState('')
   const [images, setImages] = useState<Selected[]>([])
   const [dragging, setDragging] = useState(false)
   const [analyzing, setAnalyzing] = useState(false)
@@ -78,6 +80,9 @@ export default function UploadPage() {
     setAnalyzing(true)
 
     const formData = new FormData()
+    // Strip a leading @ if the user typed one — we store handles without it.
+    const cleanHandle = handle.trim().replace(/^@+/, '')
+    if (cleanHandle) formData.append('creator_handle', cleanHandle)
     const compressed = await Promise.all(images.map((img) => compressImage(img.file)))
     compressed.forEach((file) => formData.append('images', file))
 
@@ -121,10 +126,44 @@ export default function UploadPage() {
           as one set.
         </p>
 
+        {/* ─── Creator handle (optional) ────────────────────────── */}
+        <div style={{ marginTop: 24 }}>
+          <label
+            htmlFor="creator-handle"
+            style={{
+              display: 'block',
+              fontSize: 12,
+              color: 'rgba(255,255,255,0.5)',
+              marginBottom: 8,
+            }}
+          >
+            Instagram handle (optional)
+          </label>
+          <input
+            id="creator-handle"
+            type="text"
+            value={handle}
+            onChange={(e) => setHandle(e.target.value)}
+            maxLength={MAX_HANDLE}
+            placeholder="@username"
+            style={{
+              width: '100%',
+              boxSizing: 'border-box',
+              background: '#1a1a24',
+              border: '1px solid rgba(255,255,255,0.1)',
+              color: '#f2f2f5',
+              fontFamily: 'var(--font-inter), sans-serif',
+              fontSize: 14,
+              padding: '12px 14px',
+              outline: 'none',
+            }}
+          />
+        </div>
+
         {/* ─── Drop zone ────────────────────────────────────────── */}
         <div
           className={`upload-zone${dragging ? ' dragging' : ''}`}
-          style={{ marginTop: 24 }}
+          style={{ marginTop: 16 }}
           onClick={() => inputRef.current?.click()}
           onDragOver={(e) => {
             e.preventDefault()

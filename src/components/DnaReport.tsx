@@ -36,11 +36,13 @@ export function DnaReport({
   shareSlug,
   createdAt,
   imageUrls,
+  creatorHandle,
 }: {
   dna: AestheticDna
   shareSlug?: string | null
   createdAt?: string
   imageUrls?: string[] | null
+  creatorHandle?: string | null
 }) {
   const lightMode = isLightPalette(dna.color.palette[0]?.hex ?? '#111110')
 
@@ -74,6 +76,20 @@ export function DnaReport({
             >
               Aesthetic DNA
             </span>
+            {creatorHandle && (
+              <div
+                style={{
+                  fontFamily: 'var(--font-inter), sans-serif',
+                  fontSize: 11,
+                  fontWeight: 300,
+                  letterSpacing: '0.08em',
+                  color: 'rgba(196,147,58,0.7)',
+                  marginBottom: 8,
+                }}
+              >
+                Curated by Aesthete for @{creatorHandle}
+              </div>
+            )}
             <h1
               className="mt-2 text-4xl font-semibold leading-tight tracking-tight sm:text-5xl"
               style={{ color: 'var(--card-text)' }}

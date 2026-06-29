@@ -37,6 +37,27 @@ function sanitisePillarName(raw: FormDataEntryValue | null): string | null {
   return cleaned.length > 0 ? cleaned : null
 }
 
+// Optional creator-handle attribution. Cosmetic only — never fed to the model
+// or used in scoring (see route step 4, which is unaware of it).
+const MAX_CREATOR_HANDLE = 30
+
+/**
+ * Normalise an Instagram handle: strip any @, remove all whitespace, lowercase,
+ * keep only Instagram-legal characters (letters, digits, underscore, dot) and
+ * cap at MAX_CREATOR_HANDLE. Returns null when nothing usable remains, so an
+ * empty or junk handle is stored as null rather than "".
+ */
+function sanitiseCreatorHandle(raw: FormDataEntryValue | null): string | null {
+  if (typeof raw !== 'string') return null
+  const cleaned = raw
+    .replace(/@/g, '')
+    .replace(/\s+/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9_.]/g, '')
+    .slice(0, MAX_CREATOR_HANDLE)
+  return cleaned.length > 0 ? cleaned : null
+}
+
 const STORAGE_BUCKET = 'aesthetic-images'
 const MAX_STORED_IMAGES = 4
 
@@ -172,6 +193,9 @@ export async function POST(request: Request) {
   //     standard profile and carries a short label. Both are validated/sanitised
   //     here; the DNA generation below is identical for standard and pillar runs.
   const pillarName = sanitisePillarName(formData.get('pillar_name'))
+
+  // Optional, decorative attribution — applies to standard and pillar runs alike.
+  const creatorHandle = sanitiseCreatorHandle(formData.get('creator_handle'))
 
   const parentIdRaw = formData.get('parent_profile_id')
   let parentProfileId: string | null = null
@@ -321,6 +345,7 @@ export async function POST(request: Request) {
       model: MODEL,
       prompt_version: PROMPT_VERSION,
       share_slug: shareSlug,
+      creator_handle: creatorHandle,
       ...pillarFields,
     })
     .select('id, share_slug')

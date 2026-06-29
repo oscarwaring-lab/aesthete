@@ -18,7 +18,7 @@ export default async function PillarPage({
 
   const { data: parent } = await supabase
     .from('aesthetic_profiles')
-    .select('id, dna, deleted_at')
+    .select('id, dna, creator_handle, deleted_at')
     .eq('id', profileId)
     .single()
 
@@ -33,5 +33,11 @@ export default async function PillarPage({
 
   const archetype = (parent.dna as AestheticDna).identity.archetype
 
-  return <PillarUpload parentProfileId={parent.id} archetype={archetype} />
+  return (
+    <PillarUpload
+      parentProfileId={parent.id}
+      archetype={archetype}
+      parentHandle={parent.creator_handle as string | null}
+    />
+  )
 }

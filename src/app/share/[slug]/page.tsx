@@ -45,7 +45,7 @@ export default async function SharePage({
 
   const { data: profile } = await admin
     .from('aesthetic_profiles')
-    .select('dna, share_slug, created_at, image_urls, deleted_at')
+    .select('dna, share_slug, created_at, image_urls, creator_handle, deleted_at')
     .eq('share_slug', slug)
     .single()
 
@@ -95,6 +95,7 @@ export default async function SharePage({
             dna={profile.dna as AestheticDna}
             createdAt={profile.created_at}
             imageUrls={profile.image_urls as string[] | null}
+            creatorHandle={profile.creator_handle as string | null}
           />
         </div>
 
