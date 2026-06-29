@@ -73,9 +73,12 @@ export default async function DashboardPage({
       analyses_limit: 1,
     }
 
-  const showUpgradePrompt =
-    subscription.tier === 'free' &&
-    subscription.analyses_used >= 1
+  // Stripe payments temporarily disabled (UI only) — the upgrade prompt is
+  // suppressed while in early access. Restore the condition below to re-enable.
+  // const showUpgradePrompt =
+  //   subscription.tier === 'free' &&
+  //   subscription.analyses_used >= 1
+  const showUpgradePrompt = false
 
   const { upgraded } = await searchParams
   const available = Math.max(

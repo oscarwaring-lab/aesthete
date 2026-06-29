@@ -20,6 +20,10 @@ export function UpgradeSuccessBanner({
     return () => clearTimeout(timer)
   }, [])
 
+  // Stripe payments temporarily disabled (UI only) — never surface the upgrade
+  // confirmation while in early access. Remove this line to re-enable.
+  return null
+
   if (!visible) return null
 
   const tierLabel = tier.charAt(0).toUpperCase() + tier.slice(1)

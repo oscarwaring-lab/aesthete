@@ -1,3 +1,83 @@
+import Link from 'next/link'
+
+/* ─── Stripe payments temporarily disabled — UI only ─────────────────────────
+   Early-access holding state. The full pricing + Stripe checkout UI is preserved
+   verbatim at the bottom of this file (commented out). To re-enable when Stripe
+   goes live: delete the holding-state PricingPage below and uncomment the
+   original implementation. Backend Stripe routes/webhooks are untouched. */
+
+const serif = 'var(--font-playfair), Georgia, serif'
+
+export default function PricingPage() {
+  return (
+    <div
+      style={{
+        background: '#faf9f5',
+        minHeight: '100vh',
+        color: '#111110',
+        fontFamily: 'var(--font-inter), -apple-system, sans-serif',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <div style={{ maxWidth: 540, padding: '80px 40px', textAlign: 'center' }}>
+        <p
+          style={{
+            fontSize: 11,
+            textTransform: 'uppercase',
+            letterSpacing: '0.18em',
+            color: '#2C4E7A',
+            marginBottom: 20,
+          }}
+        >
+          Early access
+        </p>
+        <h1
+          style={{
+            fontFamily: serif,
+            fontSize: 44,
+            fontWeight: 500,
+            letterSpacing: '-0.02em',
+            lineHeight: 1.1,
+            margin: 0,
+          }}
+        >
+          Paid plans coming soon.
+        </h1>
+        <p
+          style={{
+            fontSize: 15,
+            color: '#6b6960',
+            marginTop: 16,
+            lineHeight: 1.5,
+          }}
+        >
+          Aesthete is currently in early access. Sign up for free to get started.
+        </p>
+        <Link
+          href="/signup"
+          style={{
+            display: 'inline-block',
+            marginTop: 32,
+            background: '#111110',
+            color: '#faf9f5',
+            padding: '12px 24px',
+            fontSize: 12,
+            textTransform: 'uppercase',
+            letterSpacing: '0.09em',
+            textDecoration: 'none',
+            fontFamily: 'inherit',
+          }}
+        >
+          Create free account →
+        </Link>
+      </div>
+    </div>
+  )
+}
+
+/* ─── ORIGINAL PRICING IMPLEMENTATION (re-enable when Stripe goes live) ───────
 'use client'
 
 import { useState } from 'react'
@@ -56,7 +136,7 @@ export default function PricingPage() {
       }}
     >
       <div style={{ maxWidth: 960, margin: '0 auto', padding: '80px 40px' }}>
-        {/* ─── Header ───────────────────────────────────────────── */}
+        // ─── Header ─────────────────────────────────────────────
         <header style={{ textAlign: 'center', marginBottom: 56 }}>
           <p
             style={{
@@ -105,7 +185,7 @@ export default function PricingPage() {
           </p>
         )}
 
-        {/* ─── Tier cards ───────────────────────────────────────── */}
+        // ─── Tier cards ─────────────────────────────────────────
         <div
           style={{
             display: 'grid',
@@ -114,7 +194,7 @@ export default function PricingPage() {
             alignItems: 'stretch',
           }}
         >
-          {/* FREE */}
+          // FREE
           <TierCard
             label="Free"
             price="$0"
@@ -137,7 +217,7 @@ export default function PricingPage() {
             </Link>
           </TierCard>
 
-          {/* STARTER — highlighted */}
+          // STARTER — highlighted
           <TierCard
             label="Starter"
             price="$19 / month"
@@ -166,7 +246,7 @@ export default function PricingPage() {
             </button>
           </TierCard>
 
-          {/* CREATOR */}
+          // CREATOR
           <TierCard
             label="Creator"
             price="$49 / month"
@@ -286,3 +366,4 @@ function TierCard({
     </div>
   )
 }
+─────────────────────────────────────────────────────────────────────────── */
