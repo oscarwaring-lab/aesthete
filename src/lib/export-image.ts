@@ -95,12 +95,17 @@ async function inlineImages(root: HTMLElement): Promise<void> {
   )
 }
 
-const SCALE = 2 // retina-quality export
+const SCALE = 2 // retina-quality export for normal-sized cards
+// Cap the longest edge so very tall reports don't exceed Instagram's DM image
+// limit (which rejects oversized uploads with a red x). Small cards still render
+// at full 2x; only the tallest get scaled down to fit.
+const MAX_SIDE = 2600
 
 async function nodeToCanvas(node: HTMLElement, background?: string): Promise<HTMLCanvasElement> {
   const rect = node.getBoundingClientRect()
   const width = Math.ceil(rect.width)
   const height = Math.ceil(rect.height)
+  const scale = Math.min(SCALE, MAX_SIDE / Math.max(width, height))
 
   const clone = deepClone(node)
   clone.style.margin = '0'
@@ -125,15 +130,15 @@ async function nodeToCanvas(node: HTMLElement, background?: string): Promise<HTM
   })
 
   const canvas = document.createElement('canvas')
-  canvas.width = width * SCALE
-  canvas.height = height * SCALE
+  canvas.width = Math.round(width * scale)
+  canvas.height = Math.round(height * scale)
   const ctx = canvas.getContext('2d')
   if (!ctx) throw new Error('Canvas 2D context unavailable')
   if (background) {
     ctx.fillStyle = background
     ctx.fillRect(0, 0, canvas.width, canvas.height)
   }
-  ctx.scale(SCALE, SCALE)
+  ctx.scale(scale, scale)
   ctx.drawImage(image, 0, 0)
   return canvas
 }
@@ -149,6 +154,14 @@ function triggerDownload(dataUrl: string, filename: string): void {
 
 // Make sure web fonts are loaded before we snapshot, so the embedded faces are
 // available to the rasteriser.
+// Read the card's own background token so exports are filled to a solid colour
+// instead of leaving transparent rounded corners. A transparent (alpha) PNG of a
+// dark card fails to send through Instagram DMs; an opaque one sends fine.
+function cardBackground(node: HTMLElement): string {
+  const value = getComputedStyle(node).getPropertyValue('--card-bg').trim()
+  return value || '#101014'
+}
+
 async function ensureFonts(): Promise<void> {
   try {
     await document.fonts.ready
@@ -159,13 +172,13 @@ async function ensureFonts(): Promise<void> {
 
 export async function exportPng(node: HTMLElement, filename: string): Promise<void> {
   await ensureFonts()
-  const canvas = await nodeToCanvas(node)
+  const canvas = await nodeToCanvas(node, cardBackground(node))
   triggerDownload(canvas.toDataURL('image/png'), filename)
 }
 
-export async function exportJpeg(node: HTMLElement, filename: string, background = '#ffffff'): Promise<void> {
+export async function exportJpeg(node: HTMLElement, filename: string, background?: string): Promise<void> {
   await ensureFonts()
-  const canvas = await nodeToCanvas(node, background)
+  const canvas = await nodeToCanvas(node, background ?? cardBackground(node))
   triggerDownload(canvas.toDataURL('image/jpeg', 0.95), filename)
 }
 
@@ -198,10 +211,10 @@ function loadJsPdf(): Promise<new (opts: unknown) => JsPdfInstance> {
 
 export async function exportPdf(node: HTMLElement, filename: string): Promise<void> {
   await ensureFonts()
-  const canvas = await nodeToCanvas(node, '#ffffff')
+  const canvas = await nodeToCanvas(node, cardBackground(node))
   const JsPDF = await loadJsPdf()
-  const w = canvas.width / SCALE
-  const h = canvas.height / SCALE
+  const w = node.getBoundingClientRect().width
+  const h = node.getBoundingClientRect().height
   const pdf = new JsPDF({
     orientation: w > h ? 'landscape' : 'portrait',
     unit: 'pt',
