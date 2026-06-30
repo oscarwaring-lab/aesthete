@@ -28,6 +28,12 @@ const inter = Inter({
   weight: ["300", "400", "500"],
 });
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover" as const,
+};
+
 export const metadata: Metadata = {
   title: "Aesthete — Your Aesthetic DNA",
   description:

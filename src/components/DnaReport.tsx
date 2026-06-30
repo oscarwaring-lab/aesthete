@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
-import { Check, Copy, Sparkles } from 'lucide-react'
+import { useRef, useState } from 'react'
+import { Check, Copy, Download, Loader2, Sparkles } from 'lucide-react'
 import { isLightPalette } from '@/lib/colour'
+import { exportJpeg, exportPdf, exportPng } from '@/lib/export-image'
 import type { AestheticDna } from '@/lib/aesthetic-dna'
 
 const MONTHS = [
@@ -45,10 +46,16 @@ export function DnaReport({
   creatorHandle?: string | null
 }) {
   const lightMode = isLightPalette(dna.color.palette[0]?.hex ?? '#111110')
+  const cardRef = useRef<HTMLDivElement>(null)
+  const fileBase = `aesthete-${(creatorHandle || dna.identity.archetype || 'report')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '')}-dna`
 
   return (
     <div className="mx-auto w-full max-w-2xl">
       <div
+        ref={cardRef}
         data-theme={lightMode ? 'light' : 'dark'}
         className="overflow-hidden rounded-3xl border"
         style={{
@@ -59,7 +66,7 @@ export function DnaReport({
       >
         {/* Header */}
         <div
-          className="relative px-8 pt-10 pb-8"
+          className="relative px-5 pt-9 pb-7 sm:px-8 sm:pt-10 sm:pb-8"
           style={{ background: 'var(--card-bg-inner)' }}
         >
           <div
@@ -120,7 +127,7 @@ export function DnaReport({
           </div>
         </div>
 
-        <div className="space-y-8 px-8 pb-8">
+        <div className="space-y-8 px-5 pb-7 sm:px-8 sm:pb-8">
           {/* Palette */}
           <Section title="Colour palette" note={dna.color.description}>
             <div className="flex flex-wrap gap-3">
@@ -366,7 +373,7 @@ export function DnaReport({
 
         {/* Footer */}
         <div
-          className="flex items-center justify-between border-t px-8 py-5"
+          className="flex items-center justify-between border-t px-5 py-4 sm:px-8 sm:py-5"
           style={{ borderColor: 'var(--card-border)' }}
         >
           <div className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--card-muted)' }}>
@@ -381,7 +388,66 @@ export function DnaReport({
         </div>
       </div>
 
+      <DownloadBar targetRef={cardRef} fileBase={fileBase} />
       {shareSlug && <ShareBar slug={shareSlug} />}
+    </div>
+  )
+}
+
+function DownloadBar({
+  targetRef,
+  fileBase,
+}: {
+  targetRef: React.RefObject<HTMLDivElement | null>
+  fileBase: string
+}) {
+  const [busy, setBusy] = useState<null | 'png' | 'jpg' | 'pdf'>(null)
+  const [error, setError] = useState(false)
+
+  async function run(kind: 'png' | 'jpg' | 'pdf') {
+    const node = targetRef.current
+    if (!node || busy) return
+    setBusy(kind)
+    setError(false)
+    try {
+      if (kind === 'png') await exportPng(node, `${fileBase}.png`)
+      else if (kind === 'jpg') await exportJpeg(node, `${fileBase}.jpg`)
+      else await exportPdf(node, `${fileBase}.pdf`)
+    } catch {
+      setError(true)
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  const cls =
+    'flex items-center justify-center gap-2 rounded-xl border border-border bg-panel px-3 py-3 text-sm font-medium transition-colors hover:border-white/20 disabled:opacity-50'
+
+  const labels: Array<['png' | 'jpg' | 'pdf', string]> = [
+    ['png', 'PNG'],
+    ['jpg', 'JPG'],
+    ['pdf', 'PDF'],
+  ]
+
+  return (
+    <div className="mt-4">
+      <div className="grid grid-cols-3 gap-2">
+        {labels.map(([kind, label]) => (
+          <button key={kind} onClick={() => run(kind)} disabled={busy !== null} className={cls}>
+            {busy === kind ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4" />
+            )}
+            {label}
+          </button>
+        ))}
+      </div>
+      {error && (
+        <p className="mt-2 text-center text-xs text-red-400">
+          Export failed — please try again, or use PNG.
+        </p>
+      )}
     </div>
   )
 }

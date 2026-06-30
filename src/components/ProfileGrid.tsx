@@ -48,14 +48,7 @@ export function ProfileGrid({
   }
 
   return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
-        gap: 14,
-        alignItems: 'start',
-      }}
-    >
+    <div className="profile-grid">
       {standard.map((profile) => {
         const pillars = pillarsByParent[profile.id] ?? []
         return (
