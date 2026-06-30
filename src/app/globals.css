@@ -703,3 +703,22 @@ body {
   /* Share frame: a touch less top padding under the fixed nav */
   .editorial .share-main { padding-top: 108px; }
 }
+
+/* ─── Legal pages (privacy / terms) — editorial cream prose ───────── */
+.editorial .legal-main { flex: 1; width: 100%; max-width: 760px; margin: 0 auto; padding: 132px 24px 88px; }
+.editorial .legal-eyebrow { font-size: 10.5px; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: var(--prussian-mid); margin-bottom: 18px; }
+.editorial .legal-main h1 { font-family: var(--serif); font-size: clamp(32px, 4vw, 48px); font-weight: 400; font-style: italic; letter-spacing: -0.015em; line-height: 1.1; color: var(--ink); margin: 0 0 10px; }
+.editorial .legal-updated { font-size: 11.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-low); margin-bottom: 40px; }
+.editorial .legal-main h2 { font-family: var(--serif); font-size: 22px; font-weight: 500; color: var(--ink); margin: 40px 0 12px; }
+.editorial .legal-main p { font-size: 15.5px; line-height: 1.8; color: var(--ink-2); margin-bottom: 14px; }
+.editorial .legal-main ul { margin: 6px 0 14px; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; }
+.editorial .legal-main li { font-size: 15.5px; line-height: 1.7; color: var(--ink-2); }
+.editorial .legal-main strong { color: var(--ink); font-weight: 600; }
+.editorial .legal-main a { color: var(--prussian); border-bottom: 1px solid var(--prussian); padding-bottom: 1px; transition: opacity 0.2s; }
+.editorial .legal-main a:hover { opacity: 0.55; }
+.editorial .legal-foot { margin-top: 44px; padding-top: 20px; border-top: 1px solid var(--rule); font-size: 14px; color: var(--ink-mid); }
+
+/* Footer legal links */
+.editorial .footer-meta { display: flex; align-items: center; gap: 18px; }
+.editorial .footer-meta a { font-size: 11.5px; color: var(--ink-low); letter-spacing: 0.06em; transition: color 0.2s; }
+.editorial .footer-meta a:hover { color: var(--ink); }
