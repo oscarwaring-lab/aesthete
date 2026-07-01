@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Aesthete — Prototype · Liquid Glass × Editorial × Gallery</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    /* Editorial cream base */
+    --cream:#faf9f5;
+    --cream-2:#f3f1ea;
+    --cream-3:#ede9df;
+    --ink:#111110;
+    --ink-60:rgba(17,17,16,.6);
+    --ink-40:rgba(17,17,16,.4);
+    --prussian:#1E3A5F;
+    --amber:#C4933A;
+    --rule:#dddad0;
+    /* DNA palette — the colour pop */
+    --dna-amber:#C4933A;
+    --dna-clay:#C4834A;
+    --dna-sage:#7A9870;
+    --dna-rose:#C4886A;
+    --dna-slate:#8A9898;
+    --dna-lilac:#B8AEC8;
+    --dna-wheat:#E8D4B4;
+    /* Glass */
+    --glass-fill:rgba(250,249,245,.55);
+    --glass-fill-strong:rgba(250,249,245,.72);
+    --glass-stroke:rgba(255,255,255,.65);
+    --glass-shadow:0 24px 60px -24px rgba(30,58,95,.35), 0 2px 8px rgba(17,17,16,.06);
+    --serif:"Playfair Display",Georgia,serif;
+    --sans:"Inter",system-ui,sans-serif;
+    --pad:clamp(20px,5vw,88px);
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--cream);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-weight:300;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+
+  /* Film grain overlay — gallery print texture */
+  body::after{
+    content:"";
+    position:fixed;inset:0;z-index:9999;pointer-events:none;
+    opacity:.045;mix-blend-mode:multiply;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* ---- Lab metadata type ---- */
+  .meta{
+    font-family:var(--sans);
+    font-size:10.5px;font-weight:500;
+    letter-spacing:.22em;text-transform:uppercase;
+    color:var(--ink-40);
+  }
+  .meta--amber{color:rgba(196,147,58,.9)}
+
+  /* ---- Nav ---- */
+  nav{
+    position:fixed;top:0;left:0;right:0;z-index:200;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:18px var(--pad);
+    background:rgba(250,249,245,.6);
+    backdrop-filter:blur(20px) saturate(1.4);
+    -webkit-backdrop-filter:blur(20px) saturate(1.4);
+    border-bottom:1px solid var(--rule);
+  }
+  .brand{display:flex;align-items:center;gap:12px}
+  .brand .mono{
+    width:34px;height:34px;border:1px solid var(--ink);
+    display:grid;place-items:center;
+    font-family:var(--serif);font-size:19px;color:var(--ink);
+    background:var(--cream);
+  }
+  .brand .wm{font-family:var(--serif);font-size:20px;letter-spacing:.01em}
+  .brand .strand{display:flex;gap:3px;margin-left:2px}
+  .brand .strand i{width:4px;height:16px;border-radius:1px;display:block}
+  nav ul{display:flex;gap:34px;list-style:none;align-items:center}
+  nav a{color:var(--ink-60);text-decoration:none;font-size:13px;letter-spacing:.02em;transition:color .3s}
+  nav a:hover{color:var(--ink)}
+  .nav-cta{
+    font-size:12px;letter-spacing:.06em;text-transform:uppercase;font-weight:500;
+    color:var(--cream);background:var(--ink);padding:11px 20px;border-radius:2px;
+    transition:background .3s,transform .3s;
+  }
+  .nav-cta:hover{background:var(--prussian);color:var(--cream);transform:translateY(-1px)}
+
+  /* ---- Section scaffolding: gallery plate rails ---- */
+  section{position:relative;padding:clamp(72px,11vw,150px) var(--pad)}
+  .plate-tag{
+    display:flex;align-items:baseline;gap:14px;margin-bottom:34px;
+  }
+  .plate-tag .no{font-family:var(--serif);font-style:italic;font-size:15px;color:var(--amber)}
+  .plate-tag .rule{flex:0 0 44px;height:1px;background:var(--rule)}
+
+  h1,h2,h3{font-family:var(--serif);font-weight:400;letter-spacing:-.01em;line-height:1.05}
+
+  /* ================= HERO ================= */
+  .hero{
+    min-height:100vh;display:grid;align-items:center;
+    padding-top:clamp(110px,14vw,160px);
+    grid-template-columns:1.05fr .95fr;gap:clamp(24px,4vw,64px);
+  }
+  /* colour field behind hero glass */
+  .hero-field{
+    position:absolute;inset:0;z-index:0;overflow:hidden;
+  }
+  .hero-field .mesh{
+    position:absolute;border-radius:50%;filter:blur(60px);opacity:.5;
+    animation:drift 26s ease-in-out infinite;
+  }
+  .m1{width:46vw;height:46vw;top:-8vw;right:-6vw;background:radial-gradient(circle,var(--dna-amber),transparent 66%)}
+  .m2{width:38vw;height:38vw;bottom:-10vw;left:-6vw;background:radial-gradient(circle,var(--dna-sage),transparent 64%);animation-delay:-8s}
+  .m3{width:30vw;height:30vw;top:24vh;left:34vw;background:radial-gradient(circle,var(--dna-rose),transparent 62%);animation-delay:-15s;opacity:.4}
+  @keyframes drift{
+    0%,100%{transform:translate(0,0) scale(1)}
+    50%{transform:translate(3vw,-2vw) scale(1.08)}
+  }
+  .hero-copy{position:relative;z-index:2;padding-left:clamp(10px,3.4vw,60px)}
+  .hero-copy .eyebrow{margin-bottom:26px}
+  .hero h1{
+    font-size:clamp(46px,7.4vw,104px);line-height:.98;letter-spacing:-.025em;
+  }
+  .hero h1 em{font-style:italic;color:var(--prussian)}
+  .hero .lede{
+    max-width:40ch;margin:30px 0 40px;font-size:clamp(16px,1.35vw,19px);
+    color:var(--ink-60);line-height:1.65;font-weight:300;
+  }
+  .hero-actions{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+  .btn-primary{
+    background:var(--ink);color:var(--cream);text-decoration:none;
+    padding:16px 30px;border-radius:2px;font-size:13px;letter-spacing:.08em;
+    text-transform:uppercase;font-weight:500;transition:.3s;
+  }
+  .btn-primary:hover{background:var(--prussian);transform:translateY(-2px);box-shadow:0 14px 30px -12px rgba(30,58,95,.5)}
+  .btn-ghost{
+    color:var(--ink);text-decoration:none;font-size:13px;letter-spacing:.04em;
+    border-bottom:1px solid var(--ink);padding-bottom:3px;transition:.3s;
+  }
+  .btn-ghost:hover{color:var(--amber);border-color:var(--amber)}
+
+  /* Hero glass specimen card */
+  .specimen-stage{position:relative;z-index:2;display:grid;place-items:center;min-height:70vh}
+  .glass-card{
+    position:relative;
+    background:var(--glass-fill);
+    backdrop-filter:blur(26px) saturate(1.6);
+    -webkit-backdrop-filter:blur(26px) saturate(1.6);
+    border:1px solid var(--glass-stroke);
+    border-radius:18px;
+    box-shadow:var(--glass-shadow);
+  }
+  .glass-card::before{
+    content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.85), inset 0 0 0 1px rgba(255,255,255,.06);
+  }
+  .spec-card{width:min(430px,90%);padding:30px 30px 26px;transform:rotate(-1.4deg)}
+  .spec-card .head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:22px}
+  .spec-card .archetype{font-family:var(--serif);font-size:27px;line-height:1.05}
+  .spec-card .curated{margin-top:8px}
+  .spec-card .score{
+    font-family:var(--serif);font-size:40px;color:var(--amber);line-height:1;text-align:right;
+  }
+  .spec-card .score small{display:block;font-family:var(--sans);font-size:9px;letter-spacing:.2em;color:var(--ink-40);margin-top:6px}
+  .spec-bands{display:flex;height:56px;border-radius:8px;overflow:hidden;margin:6px 0 20px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.4)}
+  .spec-bands span{flex:1;transition:flex .5s}
+  .spec-bands:hover span{flex:.6}
+  .spec-bands span:hover{flex:2.4}
+  .spec-meta-row{display:flex;justify-content:space-between;gap:10px;border-top:1px solid rgba(17,17,16,.1);padding-top:16px}
+  .spec-meta-row div .k{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-40);margin-bottom:5px}
+  .spec-meta-row div .v{font-family:var(--serif);font-size:14px;font-style:italic}
+  /* floating chips */
+  .chip{
+    position:absolute;padding:9px 14px;border-radius:100px;font-size:11px;letter-spacing:.04em;
+    background:var(--glass-fill-strong);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+    border:1px solid var(--glass-stroke);box-shadow:0 10px 26px -12px rgba(17,17,16,.3);
+    display:flex;align-items:center;gap:8px;font-weight:400;
+  }
+  .chip i{width:9px;height:9px;border-radius:50%}
+  .chip-1{top:6%;right:2%;animation:float 7s ease-in-out infinite}
+  .chip-2{bottom:9%;left:-4%;animation:float 8s ease-in-out infinite;animation-delay:-3s}
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+
+  /* ================= SPECIMEN STRAND ================= */
+  .strand-sec{background:var(--cream-2);border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+  .strand-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:0;margin-top:20px;border:1px solid var(--rule);background:var(--cream)}
+  .swatch{position:relative;aspect-ratio:3/4;display:flex;flex-direction:column;justify-content:flex-end;padding:16px;overflow:hidden;border-right:1px solid rgba(255,255,255,.35)}
+  .swatch:last-child{border-right:none}
+  .swatch .fill{position:absolute;inset:0;z-index:0}
+  .swatch .plate{position:relative;z-index:1}
+  .swatch .plate .hex{font-family:var(--sans);font-size:10px;letter-spacing:.12em;font-weight:500}
+  .swatch .plate .nm{font-family:var(--serif);font-style:italic;font-size:16px;margin-top:3px}
+  .swatch .idx{position:absolute;top:12px;left:14px;z-index:1;font-size:10px;letter-spacing:.16em;font-weight:500}
+  .strand-caption{max-width:60ch;margin-top:28px;color:var(--ink-60);font-size:15px;line-height:1.7}
+
+  /* ================= PLATE / DEMO ================= */
+  .demo{display:grid;grid-template-columns:.85fr 1.15fr;gap:clamp(30px,5vw,80px);align-items:center}
+  .demo-field{position:relative;border-radius:20px;overflow:hidden;padding:44px;min-height:520px;display:grid;place-items:center;
+    background:
+      radial-gradient(120% 90% at 20% 10%, rgba(196,131,74,.5), transparent 60%),
+      radial-gradient(120% 90% at 90% 80%, rgba(122,152,112,.45), transparent 55%),
+      linear-gradient(135deg,#2a2a30,#16161e);
+  }
+  .demo-field .grain-frame{position:absolute;inset:18px;border:1px solid rgba(255,255,255,.14);border-radius:12px;pointer-events:none}
+  .report-glass{width:min(360px,92%);padding:26px;border-radius:16px;color:var(--ink);
+    background:var(--glass-fill-strong);backdrop-filter:blur(22px) saturate(1.5);-webkit-backdrop-filter:blur(22px) saturate(1.5);
+    border:1px solid var(--glass-stroke);box-shadow:0 30px 70px -20px rgba(0,0,0,.6)}
+  .report-glass .rg-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:18px}
+  .report-glass h3{font-size:22px}
+  .report-glass .rg-score{font-family:var(--serif);font-size:30px;color:var(--amber)}
+  .report-glass .rg-bands{display:flex;height:38px;border-radius:6px;overflow:hidden;margin-bottom:18px}
+  .report-glass .rg-bands span{flex:1}
+  .report-row{display:flex;justify-content:space-between;padding:9px 0;border-top:1px solid rgba(17,17,16,.09);font-size:12px}
+  .report-row .rk{color:var(--ink-40);letter-spacing:.04em}
+  .report-row .rv{font-family:var(--serif);font-style:italic;font-size:14px}
+  .demo-copy h2{font-size:clamp(32px,3.6vw,54px);margin-bottom:22px}
+  .demo-copy p{color:var(--ink-60);font-size:16px;line-height:1.7;max-width:44ch;margin-bottom:18px}
+  .demo-list{list-style:none;margin-top:26px;display:grid;gap:2px}
+  .demo-list li{display:flex;gap:16px;padding:16px 0;border-top:1px solid var(--rule);align-items:baseline}
+  .demo-list li .n{font-family:var(--serif);font-style:italic;color:var(--amber);font-size:14px;flex:0 0 26px}
+  .demo-list li .t{font-family:var(--serif);font-size:18px}
+  .demo-list li .d{color:var(--ink-60);font-size:13.5px;margin-top:3px}
+
+  /* ================= PROCESS ================= */
+  .process-sec{background:var(--cream-2);border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:26px;margin-top:20px}
+  .step{background:var(--glass-fill);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    border:1px solid var(--glass-stroke);border-radius:14px;padding:30px 28px;position:relative;overflow:hidden;box-shadow:var(--glass-shadow)}
+  .step .swatchbar{position:absolute;top:0;left:0;right:0;height:5px}
+  .step .st-no{font-family:var(--serif);font-style:italic;font-size:16px;color:var(--amber);margin-bottom:16px}
+  .step h3{font-size:22px;margin-bottom:12px}
+  .step p{color:var(--ink-60);font-size:14.5px;line-height:1.65}
+
+  /* ================= FEATURES ================= */
+  .feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;margin-top:20px;background:var(--rule);border:1px solid var(--rule)}
+  .feat{background:var(--cream);padding:34px 30px;transition:background .4s;position:relative}
+  .feat:hover{background:var(--cream-2)}
+  .feat .fno{font-size:10px;letter-spacing:.2em;color:var(--ink-40);margin-bottom:18px}
+  .feat h3{font-size:21px;margin-bottom:10px}
+  .feat p{color:var(--ink-60);font-size:14px;line-height:1.6}
+  .feat .dot{width:8px;height:8px;border-radius:50%;position:absolute;top:34px;right:30px}
+
+  /* ================= DARK ROOM ================= */
+  .darkroom{background:#16161e;color:#f2f2f5;border:none;overflow:hidden}
+  .darkroom .plate-tag .no{color:var(--amber)}
+  .darkroom .plate-tag .rule{background:rgba(255,255,255,.16)}
+  .darkroom .meta{color:rgba(255,255,255,.4)}
+  .dr-wrap{display:grid;grid-template-columns:1fr 1fr;gap:clamp(30px,5vw,72px);align-items:center}
+  .dr-copy h2{color:#f2f2f5;font-size:clamp(32px,4vw,58px);margin-bottom:22px}
+  .dr-copy h2 em{font-style:italic;color:var(--amber)}
+  .dr-copy p{color:rgba(242,242,245,.65);font-size:16px;line-height:1.7;max-width:42ch;margin-bottom:20px}
+  .dr-stat-row{display:flex;gap:40px;margin-top:34px}
+  .dr-stat .num{font-family:var(--serif);font-size:44px;color:var(--amber);line-height:1}
+  .dr-stat .lbl{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.45);margin-top:8px}
+  .dr-visual{position:relative;min-height:440px;border-radius:18px;overflow:hidden;
+    background:radial-gradient(90% 90% at 70% 20%,rgba(196,147,58,.35),transparent 60%),linear-gradient(160deg,#1c1c26,#0e0e14)}
+  .dr-visual .darkglass{position:absolute;padding:20px 22px;border-radius:14px;
+    background:rgba(28,28,38,.5);backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);
+    border:1px solid rgba(255,255,255,.12);box-shadow:0 24px 60px -20px rgba(0,0,0,.7)}
+  .dg-1{top:12%;left:10%;width:60%}
+  .dg-1 .sparkline{display:block;width:100%;height:52px;margin-top:12px}
+  .dg-2{bottom:12%;right:8%;width:52%}
+  .dg-2 .db{display:flex;height:28px;border-radius:5px;overflow:hidden;margin-top:12px}
+  .dg-2 .db span{flex:1}
+  .dark-k{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.5)}
+  .dark-v{font-family:var(--serif);font-size:22px;color:#f2f2f5}
+
+  /* ================= CTA ================= */
+  .cta{text-align:center;position:relative;overflow:hidden}
+  .cta-field{position:absolute;inset:0;z-index:0;
+    background:radial-gradient(60% 60% at 50% 0%,rgba(196,147,58,.16),transparent 70%)}
+  .cta-inner{position:relative;z-index:1;max-width:820px;margin:0 auto}
+  .cta h2{font-size:clamp(40px,6vw,88px);line-height:1.02;letter-spacing:-.02em}
+  .cta h2 em{font-style:italic;color:var(--prussian)}
+  .cta p{color:var(--ink-60);font-size:17px;margin:26px auto 40px;max-width:48ch;line-height:1.7}
+  .cta .early{margin-top:22px}
+
+  /* ================= FOOTER ================= */
+  footer{background:var(--cream-2);border-top:1px solid var(--rule);padding:56px var(--pad) 40px}
+  .foot-top{display:flex;justify-content:space-between;align-items:flex-start;gap:30px;flex-wrap:wrap}
+  .foot-brand{max-width:34ch}
+  .foot-brand .wm{font-family:var(--serif);font-size:26px;display:flex;align-items:center;gap:12px;margin-bottom:14px}
+  .foot-brand p{color:var(--ink-60);font-size:13.5px;line-height:1.6}
+  .foot-cols{display:flex;gap:60px}
+  .foot-col h4{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-40);margin-bottom:16px;font-weight:500}
+  .foot-col a{display:block;color:var(--ink-60);text-decoration:none;font-size:14px;margin-bottom:10px;transition:color .3s}
+  .foot-col a:hover{color:var(--amber)}
+  .foot-bottom{display:flex;justify-content:space-between;margin-top:48px;padding-top:22px;border-top:1px solid var(--rule);flex-wrap:wrap;gap:10px}
+
+  /* ================= ARCHETYPE GALLERY ================= */
+  .arch-head{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap;margin-bottom:32px}
+  .arch-head h2{font-size:clamp(32px,4.4vw,64px);max-width:16ch}
+  .arch-hint{display:flex;align-items:center;gap:9px}
+  .arch-hint i{width:6px;height:6px;border-radius:50%;background:var(--amber);animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+  .arch-stage{position:relative;border-radius:20px;overflow:hidden;aspect-ratio:16/8;min-height:430px;border:1px solid var(--rule);background:var(--cream-2)}
+  .arch-slide{position:absolute;inset:0;opacity:0;transition:opacity 1s ease;pointer-events:none}
+  .arch-slide.active{opacity:1;pointer-events:auto}
+  .arch-field{position:absolute;inset:0}
+  .arch-field::after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 140px rgba(17,17,16,.2)}
+  .arch-frame{position:absolute;inset:20px;border:1px solid rgba(255,255,255,.32);border-radius:12px;pointer-events:none;z-index:2}
+  .arch-tagtop{position:absolute;top:30px;left:30px;z-index:3;color:rgba(17,17,16,.6);
+    background:rgba(250,249,245,.6);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+    padding:7px 13px;border-radius:100px;border:1px solid var(--glass-stroke)}
+  .arch-info{position:absolute;left:30px;bottom:30px;z-index:3;width:min(430px,74%);padding:24px 26px;
+    border-radius:16px;background:var(--glass-fill-strong)}
+  .arch-info .ai-top{display:flex;justify-content:space-between;align-items:baseline;gap:14px;margin-bottom:16px}
+  .arch-info .ai-name{font-family:var(--serif);font-size:clamp(24px,2.6vw,34px);line-height:1.02}
+  .arch-info .ai-score{font-family:var(--serif);font-size:34px;color:var(--amber);line-height:1;text-align:right}
+  .arch-info .ai-score small{display:block;font-family:var(--sans);font-size:8px;letter-spacing:.2em;color:var(--ink-40);margin-top:5px}
+  .arch-bands{display:flex;height:26px;border-radius:6px;overflow:hidden;margin-bottom:16px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.4)}
+  .arch-bands span{flex:1}
+  .arch-sig{font-family:var(--serif);font-style:italic;font-size:16px;line-height:1.4;margin-bottom:16px}
+  .arch-chips{display:flex;gap:8px;flex-wrap:wrap}
+  .arch-chips b{font-size:10px;font-weight:500;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-60);
+    padding:6px 12px;border:1px solid rgba(17,17,16,.14);border-radius:100px;background:rgba(250,249,245,.45)}
+  .arch-progress{position:absolute;left:0;right:0;bottom:0;height:3px;background:rgba(255,255,255,.3);z-index:5}
+  .arch-progress i{display:block;height:100%;width:0;background:var(--amber)}
+  .arch-progress i.run{animation:fillbar var(--dwell,5200ms) linear forwards}
+  @keyframes fillbar{from{width:0}to{width:100%}}
+  .arch-thumbs{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-top:18px}
+  .arch-thumb{cursor:pointer;text-align:left;border:1px solid var(--rule);background:var(--cream);
+    border-radius:10px;padding:10px;font-family:var(--sans);transition:transform .3s,border-color .3s,box-shadow .3s}
+  .arch-thumb:hover{transform:translateY(-3px)}
+  .arch-thumb.active{border-color:var(--amber);box-shadow:0 12px 28px -14px rgba(196,147,58,.6)}
+  .arch-thumb .tbands{display:flex;height:30px;border-radius:5px;overflow:hidden;margin-bottom:9px}
+  .arch-thumb .tbands span{flex:1}
+  .arch-thumb .tname{font-family:var(--serif);font-size:13px;line-height:1.1;color:var(--ink)}
+  .arch-thumb .tscore{font-size:9.5px;color:var(--amber);letter-spacing:.06em;margin-top:4px;text-transform:uppercase}
+  .arch-note{margin-top:18px;font-size:12.5px;color:var(--ink-40);max-width:64ch;line-height:1.6}
+  @media(max-width:900px){.arch-thumbs{grid-template-columns:repeat(3,1fr)}.arch-info{width:auto;right:30px}}
+  @media(max-width:560px){.arch-thumbs{grid-template-columns:repeat(2,1fr)}.arch-stage{aspect-ratio:auto;min-height:540px}}
+
+  /* ================= INTERACTIVE DEMO ================= */
+  .demo2-wrap{display:grid;grid-template-columns:1fr 1fr;gap:clamp(24px,4vw,56px);align-items:start;margin-top:8px}
+  .feedpick .meta{color:var(--ink-40)}
+  .feed-samples{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
+  .feed-sample{cursor:pointer;border:1px solid var(--rule);border-radius:12px;padding:9px;background:var(--cream);font-family:var(--sans);transition:transform .3s,border-color .3s,box-shadow .3s}
+  .feed-sample:hover{transform:translateY(-3px)}
+  .feed-sample.active{border-color:var(--amber);box-shadow:0 12px 26px -14px rgba(196,147,58,.55)}
+  .feed-sample .tiles{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+  .feed-sample .tiles i{aspect-ratio:1;border-radius:4px;display:block}
+  .feed-sample .fs-lbl{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-40);margin-top:8px;display:block;text-align:center}
+  .feed-stage{position:relative;border-radius:16px;overflow:hidden;background:#16161e;border:1px solid var(--rule);margin-bottom:18px}
+  .bigtiles{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:16px}
+  .bigtiles i{aspect-ratio:1;border-radius:6px;display:block}
+  .scanline{position:absolute;top:0;bottom:0;left:2%;width:2px;background:var(--amber);box-shadow:0 0 24px 4px rgba(196,147,58,.85);opacity:0}
+  .scanline.run{animation:scan 1.5s cubic-bezier(.6,0,.4,1) forwards}
+  @keyframes scan{0%{left:2%;opacity:1}92%{opacity:1}100%{left:98%;opacity:0}}
+  .analyze-btn{width:100%;background:var(--ink);color:var(--cream);border:none;padding:15px;border-radius:3px;font-family:var(--sans);font-size:12px;letter-spacing:.1em;text-transform:uppercase;font-weight:500;cursor:pointer;transition:background .3s,transform .3s}
+  .analyze-btn:hover{background:var(--prussian);transform:translateY(-2px)}
+  .analyze-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+  .analyze-status{margin-top:12px;min-height:15px;color:var(--amber)!important;letter-spacing:.14em}
+  .reading{min-height:340px;padding:30px 32px;border-radius:18px;background:var(--glass-fill-strong)}
+  .reading-empty .meta{margin-bottom:12px}
+  .reading-empty p{color:var(--ink-60);font-size:15px;line-height:1.7;max-width:40ch}
+  .rd-top{display:flex;justify-content:space-between;align-items:baseline;gap:14px;margin-bottom:18px}
+  .rd-name{font-family:var(--serif);font-size:clamp(26px,3vw,38px);line-height:1.02}
+  .rd-score{font-family:var(--serif);font-size:44px;color:var(--amber);line-height:1;text-align:right}
+  .rd-score small{display:block;font-family:var(--sans);font-size:8px;letter-spacing:.2em;color:var(--ink-40);margin-top:5px}
+  .rd-bands{display:flex;height:32px;border-radius:6px;overflow:hidden;margin-bottom:20px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.4)}
+  .rd-bands span{flex:0;opacity:0}
+  .rd-bands span.in{flex:1;opacity:1;transition:flex .5s ease,opacity .5s ease}
+  .rd-row{display:flex;justify-content:space-between;padding:11px 0;border-top:1px solid rgba(17,17,16,.1);font-size:13px}
+  .rd-row .rk{color:var(--ink-40);letter-spacing:.03em}
+  .rd-row .rv{font-family:var(--serif);font-style:italic;font-size:15px}
+  .rd-chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+  .rd-chips b{font-size:10px;font-weight:500;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-60);padding:6px 12px;border:1px solid rgba(17,17,16,.14);border-radius:100px;opacity:0;transform:translateY(6px);transition:opacity .4s,transform .4s}
+  .rd-chips b.in{opacity:1;transform:none}
+  .rd-sig{font-family:var(--serif);font-style:italic;font-size:17px;line-height:1.4;margin:18px 0 0;opacity:0;transition:opacity .6s ease}
+  .rd-sig.in{opacity:1}
+  .rd-brief{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:22px;padding-top:20px;
+    border-top:1px solid rgba(17,17,16,.1);opacity:0;transform:translateY(8px);transition:opacity .6s ease,transform .6s ease}
+  .rd-brief.in{opacity:1;transform:none}
+  .rd-h{font-family:var(--sans);font-size:9.5px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-40);margin-bottom:13px}
+  .rd-col ul{list-style:none;display:grid;gap:10px}
+  .rd-col li{position:relative;padding-left:19px;font-size:12.5px;line-height:1.45;color:var(--ink)}
+  .rd-col li::before{content:"+";position:absolute;left:0;top:-1px;color:var(--amber);font-weight:600}
+  .rd-col--avoid li{color:var(--ink-60)}
+  .rd-col--avoid li::before{content:"\00d7";color:var(--dna-rose);top:-1px;font-weight:600}
+  @media(max-width:560px){.rd-brief{grid-template-columns:1fr;gap:16px}}
+  @media(max-width:900px){.demo2-wrap{grid-template-columns:1fr}}
+
+  /* ================= FANCY LAYER ================= */
+  #scrollstrand{position:fixed;top:0;left:0;height:3px;width:0;z-index:300;
+    background:linear-gradient(90deg,var(--dna-amber),var(--dna-clay),var(--dna-sage),var(--dna-rose),var(--dna-lilac));transition:width .1s linear}
+  .specimen-stage{perspective:1100px}
+  .spec-card{transition:transform .25s ease}
+  #plate-rail{position:fixed;right:22px;top:50%;transform:translateY(-50%);z-index:150;display:flex;flex-direction:column;gap:15px}
+  .pr-dot{display:flex;align-items:center;gap:9px;justify-content:flex-end;text-decoration:none}
+  .pr-dot .t{font-family:var(--sans);font-size:9.5px;letter-spacing:.18em;color:var(--ink-40);opacity:0;transition:opacity .3s}
+  .pr-dot .d{width:8px;height:8px;border-radius:50%;border:1px solid rgba(17,17,16,.3);transition:background .3s,border-color .3s,transform .3s}
+  .pr-dot:hover .t{opacity:1}
+  .pr-dot.active .t{opacity:1;color:var(--amber)}
+  .pr-dot.active .d{background:var(--amber);border-color:var(--amber);transform:scale(1.15)}
+  @media(max-width:1100px){#plate-rail{display:none}}
+  #intro{position:fixed;inset:0;z-index:10000;background:var(--cream);display:grid;place-items:center;
+    transition:transform .7s cubic-bezier(.7,0,.3,1),opacity .7s}
+  #intro.lift{transform:translateY(-101%);opacity:0}
+  .intro-mark{display:flex;flex-direction:column;align-items:center;gap:16px}
+  .intro-ae{font-family:var(--serif);font-size:52px;border:1px solid var(--ink);width:92px;height:92px;display:grid;place-items:center;opacity:0;animation:introfade .6s ease forwards}
+  .intro-wm{font-family:var(--serif);font-size:22px;letter-spacing:.02em;opacity:0;animation:introfade .6s .18s ease forwards}
+  .intro-strand{display:flex;gap:5px}
+  .intro-strand i{width:8px;height:22px;border-radius:1px;transform:scaleY(0);transform-origin:bottom;animation:introbar .5s ease forwards}
+  .intro-strand i:nth-child(1){background:var(--dna-amber);animation-delay:.34s}
+  .intro-strand i:nth-child(2){background:var(--dna-clay);animation-delay:.44s}
+  .intro-strand i:nth-child(3){background:var(--dna-sage);animation-delay:.54s}
+  .intro-strand i:nth-child(4){background:var(--dna-rose);animation-delay:.64s}
+  .intro-strand i:nth-child(5){background:var(--dna-lilac);animation-delay:.74s}
+  @keyframes introfade{to{opacity:1}}
+  @keyframes introbar{to{transform:scaleY(1)}}
+  @media(prefers-reduced-motion:reduce){
+    .scanline.run{animation:none}
+    .spec-card{transition:none}
+    #scrollstrand{transition:none}
+  }
+
+  /* reveal on load */
+  .reveal{opacity:0;transform:translateY(24px);animation:rise .9s cubic-bezier(.2,.7,.2,1) forwards}
+  @keyframes rise{to{opacity:1;transform:none}}
+  .d1{animation-delay:.05s}.d2{animation-delay:.18s}.d3{animation-delay:.31s}
+  .d4{animation-delay:.44s}.d5{animation-delay:.57s}.d6{animation-delay:.7s}
+
+  /* scroll reveal */
+  .obs{opacity:0;transform:translateY(30px);transition:opacity .9s ease,transform .9s cubic-bezier(.2,.7,.2,1)}
+  .obs.in{opacity:1;transform:none}
+
+  @media(max-width:900px){
+    nav ul{display:none}
+    .hero{grid-template-columns:1fr;gap:40px;text-align:left}
+    .demo,.dr-wrap{grid-template-columns:1fr}
+    .steps,.feat-grid,.strand-grid{grid-template-columns:1fr 1fr}
+    .strand-grid{grid-template-columns:repeat(4,1fr)}
+  }
+  @media(max-width:560px){
+    .steps,.feat-grid{grid-template-columns:1fr}
+    .strand-grid{grid-template-columns:repeat(2,1fr)}
+  }
+
+  /* prototype ribbon */
+  .proto{position:fixed;bottom:0;left:0;right:0;z-index:9998;background:var(--ink);color:var(--cream);
+    font-size:11px;letter-spacing:.14em;text-transform:uppercase;text-align:center;padding:7px;font-weight:500}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="brand">
+    <div class="mono">Æ</div>
+    <span class="wm">Aesthete</span>
+    <span class="strand">
+      <i style="background:var(--dna-amber)"></i>
+      <i style="background:var(--dna-clay)"></i>
+      <i style="background:var(--dna-sage)"></i>
+      <i style="background:var(--dna-rose)"></i>
+      <i style="background:var(--dna-lilac)"></i>
+    </span>
+  </div>
+  <ul>
+    <li><a href="#specimen">The Strand</a></li>
+    <li><a href="#report">The Report</a></li>
+    <li><a href="#archetypes">Archetypes</a></li>
+    <li><a href="#process">Process</a></li>
+    <li><a href="#studio">Studio</a></li>
+  </ul>
+  <a href="#access" class="nav-cta">Join today</a>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="hero-field">
+    <div class="mesh m1"></div>
+    <div class="mesh m2"></div>
+    <div class="mesh m3"></div>
+  </div>
+  <div class="hero-copy">
+    <div class="meta meta--amber eyebrow reveal d1">Aesthetic DNA · Est. 2026 · No. 001</div>
+    <h1 class="reveal d2">Your visual<br>identity, <em>codified.</em></h1>
+    <p class="lede reveal d3">Aesthete reads your feed's palette, tone, mood and composition, then returns a creative brief precise enough to art-direct from. The creative director you don't have.</p>
+    <div class="hero-actions reveal d4">
+      <a href="/signup" class="btn-primary">Join today</a>
+      <a href="#demo" class="btn-ghost">Try the demo</a>
+    </div>
+  </div>
+
+  <div class="specimen-stage reveal d3">
+    <div class="chip chip-1"><i style="background:var(--dna-sage)"></i> Sunset Wanderlust</div>
+    <div class="chip chip-2"><i style="background:var(--dna-amber)"></i> Consistency 91</div>
+    <div class="glass-card spec-card">
+      <div class="head">
+        <div>
+          <div class="meta">Archetype</div>
+          <div class="archetype">Sunset<br>Wanderlust</div>
+          <div class="meta curated" style="color:rgba(196,147,58,.8)">Curated by Aesthete for @....</div>
+        </div>
+        <div class="score"><span class="countup" data-to="91">0</span><small>Consistency</small></div>
+      </div>
+      <div class="meta" style="margin-bottom:8px">Palette · The strand</div>
+      <div class="spec-bands">
+        <span style="background:var(--dna-amber)"></span>
+        <span style="background:var(--dna-clay)"></span>
+        <span style="background:var(--dna-wheat)"></span>
+        <span style="background:var(--dna-rose)"></span>
+        <span style="background:var(--dna-slate)"></span>
+      </div>
+      <div class="spec-meta-row">
+        <div><div class="k">Exposure</div><div class="v">Warm, lifted</div></div>
+        <div><div class="k">Grain</div><div class="v">Fine, filmic</div></div>
+        <div><div class="k">Mood</div><div class="v">Nostalgic</div></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- SPECIMEN STRAND -->
+<section id="specimen" class="strand-sec">
+  <div class="plate-tag">
+    <span class="no">Plate I</span><span class="rule"></span>
+    <span class="meta">The Strand</span>
+  </div>
+  <h2 style="font-size:clamp(32px,4.4vw,64px);max-width:16ch">Every identity resolves to five colours.</h2>
+  <div class="strand-grid">
+    <div class="swatch"><div class="fill" style="background:var(--dna-amber)"></div><div class="idx meta" style="color:rgba(0,0,0,.5)">01</div><div class="plate"><div class="hex" style="color:rgba(0,0,0,.55)">#C4933A</div><div class="nm" style="color:#111110">Amber</div></div></div>
+    <div class="swatch"><div class="fill" style="background:var(--dna-clay)"></div><div class="idx meta" style="color:rgba(0,0,0,.5)">02</div><div class="plate"><div class="hex" style="color:rgba(0,0,0,.55)">#C4834A</div><div class="nm" style="color:#111110">Clay</div></div></div>
+    <div class="swatch"><div class="fill" style="background:var(--dna-sage)"></div><div class="idx meta" style="color:rgba(0,0,0,.5)">03</div><div class="plate"><div class="hex" style="color:rgba(0,0,0,.55)">#7A9870</div><div class="nm" style="color:#111110">Sage</div></div></div>
+    <div class="swatch"><div class="fill" style="background:var(--dna-rose)"></div><div class="idx meta" style="color:rgba(0,0,0,.5)">04</div><div class="plate"><div class="hex" style="color:rgba(0,0,0,.55)">#C4886A</div><div class="nm" style="color:#111110">Rose</div></div></div>
+    <div class="swatch"><div class="fill" style="background:var(--dna-slate)"></div><div class="idx meta" style="color:rgba(0,0,0,.5)">05</div><div class="plate"><div class="hex" style="color:rgba(0,0,0,.55)">#8A9898</div><div class="nm" style="color:#111110">Slate</div></div></div>
+    <div class="swatch"><div class="fill" style="background:var(--dna-lilac)"></div><div class="idx meta" style="color:rgba(0,0,0,.5)">06</div><div class="plate"><div class="hex" style="color:rgba(0,0,0,.55)">#B8AEC8</div><div class="nm" style="color:#111110">Lilac</div></div></div>
+    <div class="swatch"><div class="fill" style="background:var(--dna-wheat)"></div><div class="idx meta" style="color:rgba(0,0,0,.5)">07</div><div class="plate"><div class="hex" style="color:rgba(0,0,0,.55)">#E8D4B4</div><div class="nm" style="color:#111110">Wheat</div></div></div>
+  </div>
+  <p class="strand-caption">Aesthete pulls these five colours from your actual feed and pins them like plates in a field guide. Your audience already recognises this signature, even if you've never named it.</p>
+</section>
+
+<!-- REPORT / DEMO -->
+<section id="report" class="demo">
+  <div class="demo-field obs">
+    <div class="grain-frame"></div>
+    <div class="report-glass">
+      <div class="meta" style="margin-bottom:14px">DNA Report · No. 004</div>
+      <div class="rg-top">
+        <h3>Epic Naturalist</h3>
+        <div class="rg-score countup" data-to="92">0</div>
+      </div>
+      <div class="rg-bands">
+        <span style="background:var(--dna-sage)"></span>
+        <span style="background:var(--dna-slate)"></span>
+        <span style="background:var(--dna-amber)"></span>
+        <span style="background:var(--dna-clay)"></span>
+        <span style="background:var(--dna-wheat)"></span>
+      </div>
+      <div class="report-row"><span class="rk">Exposure</span><span class="rv">Deep, controlled</span></div>
+      <div class="report-row"><span class="rk">Composition</span><span class="rv">Rule-of-thirds, wide</span></div>
+      <div class="report-row"><span class="rk">Signature</span><span class="rv">Scale over subject</span></div>
+      <div class="report-row"><span class="rk">Curated for</span><span class="rv" style="color:var(--amber)">@....</span></div>
+    </div>
+  </div>
+  <div class="demo-copy obs">
+    <div class="plate-tag"><span class="no">Plate II</span><span class="rule"></span><span class="meta">The Report</span></div>
+    <h2>A brief you could<br>hand to a stylist.</h2>
+    <p>Upload a set of images. Aesthete returns your archetype, a named palette, a tonal grade direction, your compositional tendencies, and a consistency score it builds from evidence rather than guesswork.</p>
+    <ul class="demo-list">
+      <li><span class="n">01</span><div><div class="t">Archetype &amp; signature</div><div class="d">The one line your feed is already reaching for.</div></div></li>
+      <li><span class="n">02</span><div><div class="t">Consistency score</div><div class="d">The rubric names every deviation before it assigns a number.</div></div></li>
+      <li><span class="n">03</span><div><div class="t">Shoot-next directions</div><div class="d">The frames to shoot next, and the moves that break your identity.</div></div></li>
+    </ul>
+  </div>
+</section>
+
+<!-- INTERACTIVE DEMO -->
+<section id="demo" class="demo2-sec">
+  <div class="plate-tag"><span class="no">Plate III</span><span class="rule"></span><span class="meta">Try It</span></div>
+  <div class="arch-head">
+    <h2>Read a feed's DNA in real time.</h2>
+    <div class="arch-hint"><i></i><span class="meta">Live demo · pick a sample</span></div>
+  </div>
+  <div class="demo2-wrap">
+    <div class="feedpick">
+      <div class="meta" style="margin-bottom:14px">01 · Choose a sample feed</div>
+      <div class="feed-samples" id="feedSamples"></div>
+      <div class="feed-stage" id="feedStage">
+        <div class="bigtiles" id="bigTiles"></div>
+        <div class="scanline" id="scanline"></div>
+      </div>
+      <button class="analyze-btn" id="analyzeBtn" type="button">Analyze this feed</button>
+      <div class="analyze-status meta" id="analyzeStatus"></div>
+    </div>
+    <div class="reading glass-card" id="reading">
+      <div class="reading-empty">
+        <div class="meta">Aesthetic DNA</div>
+        <p>Pick a sample feed and analyze it. Aesthete returns the archetype, palette, tone, a consistency score, and a creative direction of what to shoot next and what to avoid.</p>
+      </div>
+    </div>
+  </div>
+  <p class="arch-note">Sample feeds are shown as colour grades, not photographs. The reading runs the same schema your uploads do.</p>
+</section>
+
+<!-- ARCHETYPE GALLERY -->
+<section id="archetypes" class="arch-sec">
+  <div class="plate-tag"><span class="no">Plate IV</span><span class="rule"></span><span class="meta">The Archetypes</span></div>
+  <div class="arch-head">
+    <h2>Every aesthetic resolves to an archetype.</h2>
+    <div class="arch-hint"><i></i><span class="meta">Auto-rotating · hover to pause</span></div>
+  </div>
+  <div class="arch-stage" id="archStage">
+    <div class="arch-progress"><i id="archBar"></i></div>
+  </div>
+  <div class="arch-thumbs" id="archThumbs"></div>
+  <p class="arch-note">Each panel is generated from an extracted colour grade and its five-colour palette. Real photography drops into this frame once a featured creator has cleared it.</p>
+</section>
+
+<!-- PROCESS -->
+<section id="process" class="process-sec">
+  <div class="plate-tag"><span class="no">Plate V</span><span class="rule"></span><span class="meta">The Method</span></div>
+  <h2 style="font-size:clamp(32px,4.4vw,64px);max-width:18ch">Three steps from feed to field guide.</h2>
+  <div class="steps">
+    <div class="step obs"><div class="swatchbar" style="background:var(--dna-amber)"></div><div class="st-no">Step I</div><h3>Submit the images</h3><p>Drop in a representative set of images. You bring the taste; Aesthete handles the compression and framing.</p></div>
+    <div class="step obs"><div class="swatchbar" style="background:var(--dna-sage)"></div><div class="st-no">Step II</div><h3>Extract the DNA</h3><p>Aesthete reads palette, exposure, grain, composition and mood, then codifies them into a brief you can repeat.</p></div>
+    <div class="step obs"><div class="swatchbar" style="background:var(--dna-rose)"></div><div class="st-no">Step III</div><h3>Hold the line</h3><p>Score every new post against your DNA and watch continuity trend over time. Your identity holds as you scale.</p></div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="plate-tag"><span class="no">Plate VI</span><span class="rule"></span><span class="meta">The Instruments</span></div>
+  <h2 style="font-size:clamp(32px,4.4vw,64px);max-width:16ch">Everything a visual identity needs to stay itself.</h2>
+  <div class="feat-grid">
+    <div class="feat obs"><div class="dot" style="background:var(--dna-amber)"></div><div class="fno">Fig. 01</div><h3>Aesthetic DNA</h3><p>Palette, tone, mood and composition codified into one legible brief.</p></div>
+    <div class="feat obs"><div class="dot" style="background:var(--dna-sage)"></div><div class="fno">Fig. 02</div><h3>Continuity scoring</h3><p>Score any post against your DNA, dimension by dimension.</p></div>
+    <div class="feat obs"><div class="dot" style="background:var(--dna-rose)"></div><div class="fno">Fig. 03</div><h3>Score history</h3><p>Consistency plotted over time as a quiet amber sparkline.</p></div>
+    <div class="feat obs"><div class="dot" style="background:var(--dna-clay)"></div><div class="fno">Fig. 04</div><h3>Content pillars</h3><p>Analyse up to three shoot types under one identity.</p></div>
+    <div class="feat obs"><div class="dot" style="background:var(--dna-slate)"></div><div class="fno">Fig. 05</div><h3>Adaptive report card</h3><p>Light or dark, chosen automatically from your palette's luminance.</p></div>
+    <div class="feat obs"><div class="dot" style="background:var(--dna-lilac)"></div><div class="fno">Fig. 06</div><h3>Shareable report</h3><p>A framed, public report you can hand to anyone, curated for your handle.</p></div>
+  </div>
+</section>
+
+<!-- DARK ROOM / STUDIO -->
+<section id="studio" class="darkroom">
+  <div class="dr-wrap">
+    <div class="dr-copy obs">
+      <div class="plate-tag"><span class="no">Plate VII</span><span class="rule"></span><span class="meta">The Studio</span></div>
+      <h2>Bright reports.<br><em>Dark studio.</em></h2>
+      <p>The public work lives on cream, like a magazine page. The tools live in a dark studio, where your DNA, continuity checks and pillar analyses sit under one quiet light.</p>
+      <div class="dr-stat-row">
+        <div class="dr-stat"><div class="num">5</div><div class="lbl">Palette colours</div></div>
+        <div class="dr-stat"><div class="num">4</div><div class="lbl">DNA dimensions</div></div>
+        <div class="dr-stat"><div class="num">∞</div><div class="lbl">Continuity checks</div></div>
+      </div>
+    </div>
+    <div class="dr-visual obs">
+      <div class="darkglass dg-1">
+        <div class="dark-k">Continuity · @....</div>
+        <div class="dark-v">Urban Explorer · 91</div>
+        <svg class="sparkline" viewBox="0 0 240 52" preserveAspectRatio="none">
+          <polyline points="0,40 40,34 80,38 120,22 160,26 200,14 240,18" fill="none" stroke="#C4933A" stroke-width="2"/>
+          <circle cx="240" cy="18" r="3.5" fill="#C4933A"/>
+        </svg>
+      </div>
+      <div class="darkglass dg-2">
+        <div class="dark-k">The strand</div>
+        <div class="db">
+          <span style="background:var(--dna-slate)"></span>
+          <span style="background:var(--dna-amber)"></span>
+          <span style="background:var(--dna-clay)"></span>
+          <span style="background:var(--dna-sage)"></span>
+          <span style="background:var(--dna-wheat)"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section id="access" class="cta">
+  <div class="cta-field"></div>
+  <div class="cta-inner">
+    <div class="meta meta--amber" style="margin-bottom:24px">Open now · Free to start</div>
+    <h2>See your feed the way<br>your audience <em>already does.</em></h2>
+    <p>Create your account and run your first Aesthetic DNA analysis free. Paid plans arrive later; for now the studio is open.</p>
+    <a href="/signup" class="btn-primary">Join today</a>
+    <div class="meta early">No card required · Your first analysis is free</div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="foot-top">
+    <div class="foot-brand">
+      <div class="wm"><span style="border:1px solid var(--ink);width:30px;height:30px;display:grid;place-items:center;font-size:17px">Æ</span> Aesthete</div>
+      <p>Your visual identity, codified. An AI creative director for lifestyle and personal-brand creators.</p>
+    </div>
+    <div class="foot-cols">
+      <div class="foot-col"><h4>Product</h4><a href="#report">The Report</a><a href="#process">Process</a><a href="#features">Features</a><a href="#studio">Studio</a></div>
+      <div class="foot-col"><h4>Company</h4><a href="#">About</a><a href="#">Journal</a><a href="#">Contact</a></div>
+      <div class="foot-col"><h4>Connect</h4><a href="#">Instagram</a><a href="#">Email</a></div>
+    </div>
+  </div>
+  <div class="foot-bottom">
+    <span class="meta">© 2026 Aesthete · Aesthetic DNA</span>
+    <span class="meta">getaesthete.com</span>
+  </div>
+</footer>
+
+<div class="proto">Prototype · Liquid Glass × Editorial × Gallery colour-pop · not production</div>
+
+<script>
+  const io=new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}})},{threshold:.15});
+  document.querySelectorAll('.obs').forEach(el=>io.observe(el));
+
+  /* ---- Archetype gallery ---- */
+  const ARCH=[
+    {name:"Sunset Wanderlust",score:91,tone:"Warm, lifted",mood:["Nostalgic","Golden","Roaming"],
+     sig:"Chase the last hour of light.",
+     shoot:["Backlit portraits in the last hour of light","Wide horizons with the sun low and flaring","Warm interiors lit by a single window"],
+     avoid:["Cool blue midday light","Hard flash and sharp shadows","Busy, high-saturation backgrounds"],
+     palette:["#C4933A","#C4834A","#E8D4B4","#C4886A","#8A9898"],
+     grade:"radial-gradient(120% 100% at 15% 20%,#E8B26A,transparent 55%),radial-gradient(120% 100% at 85% 80%,#C4886A,transparent 55%),linear-gradient(140deg,#C4933A,#7a5a3a)"},
+    {name:"Epic Naturalist",score:92,tone:"Deep, controlled",mood:["Vast","Grounded","Elemental"],
+     sig:"Let scale dwarf the subject.",
+     shoot:["A lone figure against vast landscape","Aerial or elevated wide vantage points","Texture studies of rock, water and sky"],
+     avoid:["Tight crops that lose the scale","Neon or artificial colour","Cluttered urban frames"],
+     palette:["#7A9870","#8A9898","#5c6b57","#C4933A","#E8D4B4"],
+     grade:"radial-gradient(120% 100% at 20% 15%,#9fb38f,transparent 55%),radial-gradient(120% 100% at 80% 85%,#3f4d43,transparent 55%),linear-gradient(160deg,#5c6b57,#26302a)"},
+    {name:"Effortless Retro Chic",score:88,tone:"Faded film",mood:["Undone","Analog","Timeless"],
+     sig:"Let the grain do the talking.",
+     shoot:["Grainy film portraits, soft focus","Candid moments over posed shots","Muted daylight interiors"],
+     avoid:["Over-sharpened digital clarity","Cool white balance","Heavy retouching"],
+     palette:["#C4834A","#E8D4B4","#C4933A","#B8AEC8","#8A9898"],
+     grade:"radial-gradient(120% 100% at 25% 25%,#e6cfa8,transparent 55%),radial-gradient(120% 100% at 80% 80%,#b98f66,transparent 55%),linear-gradient(150deg,#cbb18a,#8a6f57)"},
+    {name:"Urban Explorer",score:91,tone:"Moody contrast",mood:["Kinetic","Nocturnal","Graphic"],
+     sig:"Find the light in the concrete.",
+     shoot:["Neon reflections on wet streets","Single figures dwarfed by architecture","Pools of light in deep shadow"],
+     avoid:["Flat daytime overcast light","Pastel or washed palettes","Symmetrical, centred compositions"],
+     palette:["#8A9898","#1E3A5F","#C4933A","#3a3a44","#E8D4B4"],
+     grade:"radial-gradient(120% 100% at 80% 22%,#C4933A,transparent 45%),radial-gradient(120% 100% at 15% 85%,#1E3A5F,transparent 55%),linear-gradient(160deg,#2b2b34,#131319)"},
+    {name:"Coastal Minimalist",score:89,tone:"Airy, sun-bleached",mood:["Breezy","Quiet","Tidal"],
+     sig:"Leave room for the sky.",
+     shoot:["Wide skies with a low horizon line","Negative space around a single subject","Soft overcast or early-morning light"],
+     avoid:["Dense, busy foregrounds","Heavy contrast and deep blacks","Warm golden-hour tones"],
+     palette:["#8A9898","#E8D4B4","#7A9870","#f3f1ea","#B8AEC8"],
+     grade:"radial-gradient(120% 100% at 20% 20%,#eef2f0,transparent 55%),radial-gradient(120% 100% at 85% 80%,#a9bcbf,transparent 55%),linear-gradient(150deg,#d7e0dd,#9fb0b0)"},
+    {name:"Warm Editorial",score:93,tone:"Printed, matte",mood:["Composed","Inked","Considered"],
+     sig:"Compose it like a page.",
+     shoot:["Composed still lifes with room to breathe","Ink-dark accents against cream","Symmetry and clean typographic space"],
+     avoid:["Snapshot spontaneity","Clashing saturated colour","Cramped, edge-to-edge framing"],
+     palette:["#faf9f5","#1E3A5F","#C4933A","#C4834A","#dddad0"],
+     grade:"radial-gradient(120% 100% at 25% 20%,#f3ede1,transparent 55%),radial-gradient(120% 100% at 85% 85%,#d8c39a,transparent 50%),linear-gradient(150deg,#efe9dd,#cdbfa4)"}
+  ];
+  (function(){
+    const stage=document.getElementById('archStage');
+    const thumbs=document.getElementById('archThumbs');
+    const bar=document.getElementById('archBar');
+    const sec=document.getElementById('archetypes');
+    if(!stage||!thumbs) return;
+    const DWELL=5200; let idx=0, timer=null;
+    const bands=p=>p.map(c=>`<span style="background:${c}"></span>`).join('');
+    ARCH.forEach((a,i)=>{
+      const s=document.createElement('div');
+      s.className='arch-slide'+(i===0?' active':'');
+      s.innerHTML=
+        `<div class="arch-field" style="background:${a.grade}"></div>`+
+        `<div class="arch-frame"></div>`+
+        `<div class="meta arch-tagtop">Archetype No. ${String(i+1).padStart(2,'0')} · DNA</div>`+
+        `<div class="glass-card arch-info">`+
+          `<div class="ai-top"><div class="ai-name">${a.name}</div>`+
+          `<div class="ai-score">${a.score}<small>Consistency</small></div></div>`+
+          `<div class="arch-bands">${bands(a.palette)}</div>`+
+          `<div class="arch-sig">${a.sig}</div>`+
+          `<div class="arch-chips">${a.mood.map(m=>`<b>${m}</b>`).join('')}`+
+          `<b style="border-color:rgba(196,147,58,.45);color:rgba(196,147,58,.95)">${a.tone}</b></div>`+
+        `</div>`;
+      stage.insertBefore(s, stage.querySelector('.arch-progress'));
+      const t=document.createElement('button');
+      t.type='button'; t.className='arch-thumb'+(i===0?' active':'');
+      t.innerHTML=`<div class="tbands">${bands(a.palette)}</div><div class="tname">${a.name}</div><div class="tscore">Consistency ${a.score}</div>`;
+      t.addEventListener('click',()=>{go(i);restart();});
+      thumbs.appendChild(t);
+    });
+    const slides=[...stage.querySelectorAll('.arch-slide')];
+    const ths=[...thumbs.querySelectorAll('.arch-thumb')];
+    function go(n){
+      slides[idx].classList.remove('active'); ths[idx].classList.remove('active');
+      idx=(n+ARCH.length)%ARCH.length;
+      slides[idx].classList.add('active'); ths[idx].classList.add('active');
+    }
+    function runBar(){ if(!bar) return; bar.classList.remove('run'); void bar.offsetWidth; bar.classList.add('run'); }
+    function tick(){ go(idx+1); runBar(); }
+    function start(){ timer=setInterval(tick,DWELL); runBar(); }
+    function restart(){ clearInterval(timer); start(); }
+    sec.addEventListener('mouseenter',()=>{ clearInterval(timer); if(bar) bar.style.animationPlayState='paused'; });
+    sec.addEventListener('mouseleave',()=>{ if(bar) bar.style.animationPlayState='running'; restart(); });
+    start();
+  })();
+
+  /* ---- Interactive Try-It demo ---- */
+  const SAMPLES=[
+    {label:"Golden hour", dna:ARCH[0], tiles:[
+      "linear-gradient(135deg,#E8B26A,#C4834A)","linear-gradient(135deg,#C4886A,#7a5a4a)",
+      "linear-gradient(135deg,#E8D4B4,#C4933A)","linear-gradient(135deg,#C4933A,#7a5a3a)",
+      "linear-gradient(135deg,#8A9898,#C4886A)","linear-gradient(135deg,#C4834A,#E8D4B4)",
+      "linear-gradient(135deg,#b98f66,#C4933A)","linear-gradient(135deg,#C4886A,#E8D4B4)"]},
+    {label:"Coastal", dna:ARCH[4], tiles:[
+      "linear-gradient(135deg,#d7e0dd,#9fb0b0)","linear-gradient(135deg,#E8D4B4,#f3f1ea)",
+      "linear-gradient(135deg,#8A9898,#b9c6c6)","linear-gradient(135deg,#7A9870,#a9bcbf)",
+      "linear-gradient(135deg,#eef2f0,#c4d0cd)","linear-gradient(135deg,#B8AEC8,#d7e0dd)",
+      "linear-gradient(135deg,#9fb0b0,#E8D4B4)","linear-gradient(135deg,#f3f1ea,#8A9898)"]},
+    {label:"Urban night", dna:ARCH[3], tiles:[
+      "linear-gradient(135deg,#2b2b34,#131319)","linear-gradient(135deg,#1E3A5F,#2b2b34)",
+      "linear-gradient(135deg,#C4933A,#5a4526)","linear-gradient(135deg,#3a3a44,#8A9898)",
+      "linear-gradient(135deg,#131319,#1E3A5F)","linear-gradient(135deg,#8A9898,#2b2b34)",
+      "linear-gradient(135deg,#2b2b34,#C4933A)","linear-gradient(135deg,#1E3A5F,#131319)"]}
+  ];
+  (function(){
+    const samplesEl=document.getElementById('feedSamples');
+    const bigEl=document.getElementById('bigTiles');
+    const scan=document.getElementById('scanline');
+    const btn=document.getElementById('analyzeBtn');
+    const statusEl=document.getElementById('analyzeStatus');
+    const reading=document.getElementById('reading');
+    if(!samplesEl||!btn) return;
+    const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let sel=0, busy=false;
+    SAMPLES.forEach((s,i)=>{
+      const c=document.createElement('button');
+      c.type='button'; c.className='feed-sample'+(i===0?' active':'');
+      c.innerHTML=`<div class="tiles">${s.tiles.slice(0,4).map(t=>`<i style="background:${t}"></i>`).join('')}</div><span class="fs-lbl">${s.label}</span>`;
+      c.addEventListener('click',()=>{ if(busy) return; sel=i; sync(); renderBig(); resetReading(); btn.textContent='Analyze this feed'; });
+      samplesEl.appendChild(c);
+    });
+    const cards=[...samplesEl.children];
+    function sync(){ cards.forEach((c,i)=>c.classList.toggle('active',i===sel)); }
+    function renderBig(){ bigEl.innerHTML=SAMPLES[sel].tiles.map(t=>`<i style="background:${t}"></i>`).join(''); }
+    function resetReading(){ reading.innerHTML='<div class="reading-empty"><div class="meta">Aesthetic DNA</div><p>Analyze the selected feed to generate its reading.</p></div>'; }
+    renderBig();
+    btn.addEventListener('click',()=>{
+      if(busy) return; busy=true; btn.disabled=true;
+      const a=SAMPLES[sel].dna;
+      if(!RM){ scan.classList.remove('run'); void scan.offsetWidth; scan.classList.add('run'); }
+      statusEl.textContent='READING AESTHETIC DNA…';
+      setTimeout(()=>{ statusEl.textContent=''; render(a); busy=false; btn.disabled=false; btn.textContent='Analyze again'; }, RM?0:1500);
+    });
+    function render(a){
+      reading.innerHTML=
+        '<div class="rd-top"><div class="rd-name">'+a.name+'</div>'+
+        '<div class="rd-score"><span id="rdScore">0</span><small>Consistency</small></div></div>'+
+        '<div class="rd-bands" id="rdBands">'+a.palette.map(c=>'<span style="background:'+c+'"></span>').join('')+'</div>'+
+        '<div class="rd-row"><span class="rk">Tone</span><span class="rv">'+a.tone+'</span></div>'+
+        '<div class="rd-chips" id="rdChips">'+a.mood.map(m=>'<b>'+m+'</b>').join('')+'</div>'+
+        '<p class="rd-sig" id="rdSig">'+a.sig+'</p>'+
+        '<div class="rd-brief" id="rdBrief">'+
+          '<div class="rd-col"><div class="rd-h">Shoot next</div><ul>'+a.shoot.map(x=>'<li>'+x+'</li>').join('')+'</ul></div>'+
+          '<div class="rd-col rd-col--avoid"><div class="rd-h">Avoid</div><ul>'+a.avoid.map(x=>'<li>'+x+'</li>').join('')+'</ul></div>'+
+        '</div>';
+      const bands=[...reading.querySelectorAll('#rdBands span')];
+      const chips=[...reading.querySelectorAll('#rdChips b')];
+      const sig=reading.querySelector('#rdSig');
+      const brief=reading.querySelector('#rdBrief');
+      const scoreEl=reading.querySelector('#rdScore');
+      if(RM){ bands.forEach(b=>b.classList.add('in')); chips.forEach(c=>c.classList.add('in')); sig.classList.add('in'); brief.classList.add('in'); scoreEl.textContent=a.score; return; }
+      bands.forEach((b,i)=>setTimeout(()=>b.classList.add('in'), i*120));
+      setTimeout(()=>{
+        chips.forEach((c,i)=>setTimeout(()=>c.classList.add('in'), i*110));
+        sig.classList.add('in');
+        countTo(scoreEl, a.score, 900);
+      }, bands.length*120+120);
+      setTimeout(()=>brief.classList.add('in'), bands.length*120+520);
+    }
+    function countTo(el,to,dur){ const t0=performance.now(); (function step(t){ const p=Math.min(1,(t-t0)/dur); el.textContent=Math.round(p*to); if(p<1) requestAnimationFrame(step); })(performance.now()); }
+  })();
+
+  /* ---- Fancy layer: scroll strand, tilt, count-ups, plate rail, magnetic, intro ---- */
+  (function(){
+    const RMg=matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const strand=document.createElement('div'); strand.id='scrollstrand'; document.body.appendChild(strand);
+    addEventListener('scroll',()=>{ const h=document.documentElement; const denom=(h.scrollHeight-h.clientHeight)||1; strand.style.width=(Math.min(1,h.scrollTop/denom)*100)+'%'; },{passive:true});
+
+    if(!RMg){
+      const stg=document.querySelector('.specimen-stage'), card=document.querySelector('.spec-card');
+      if(stg&&card){
+        stg.addEventListener('mousemove',e=>{ const r=stg.getBoundingClientRect(); const x=(e.clientX-r.left)/r.width-.5, y=(e.clientY-r.top)/r.height-.5; card.style.transform='rotate(-1.4deg) rotateY('+(x*8).toFixed(2)+'deg) rotateX('+(-y*8).toFixed(2)+'deg)'; });
+        stg.addEventListener('mouseleave',()=>{ card.style.transform='rotate(-1.4deg)'; });
+      }
+      document.querySelectorAll('.btn-primary,.nav-cta').forEach(b=>{
+        b.addEventListener('mousemove',e=>{ const r=b.getBoundingClientRect(); const x=(e.clientX-r.left)/r.width-.5, y=(e.clientY-r.top)/r.height-.5; b.style.transform='translate('+(x*6).toFixed(1)+'px,'+(y*6).toFixed(1)+'px)'; });
+        b.addEventListener('mouseleave',()=>{ b.style.transform=''; });
+      });
+    }
+
+    function countNum(el,to,dur){ const t0=performance.now(); (function s(t){ const p=Math.min(1,(t-t0)/dur); el.textContent=Math.round(p*to); if(p<1) requestAnimationFrame(s); })(performance.now()); }
+    const cuIO=new IntersectionObserver((es)=>{es.forEach(e=>{ if(e.isIntersecting){ countNum(e.target,+e.target.dataset.to,1100); cuIO.unobserve(e.target); } })},{threshold:.6});
+    document.querySelectorAll('.countup').forEach(el=>{ if(RMg){ el.textContent=el.dataset.to; } else { cuIO.observe(el); } });
+
+    const rail=document.createElement('div'); rail.id='plate-rail';
+    const items=[['specimen','I'],['report','II'],['demo','III'],['archetypes','IV'],['process','V'],['features','VI'],['studio','VII']];
+    items.forEach(([id,rn])=>{ const a=document.createElement('a'); a.href='#'+id; a.className='pr-dot'; a.dataset.id=id; a.innerHTML='<span class="t">'+rn+'</span><span class="d"></span>'; rail.appendChild(a); });
+    document.body.appendChild(rail);
+    const dots=[...rail.children];
+    const secIO=new IntersectionObserver((es)=>{es.forEach(e=>{ if(e.isIntersecting){ dots.forEach(d=>d.classList.toggle('active',d.dataset.id===e.target.id)); } })},{threshold:.5});
+    items.forEach(([id])=>{ const s=document.getElementById(id); if(s) secIO.observe(s); });
+
+    if(!RMg){
+      const intro=document.createElement('div'); intro.id='intro';
+      intro.innerHTML='<div class="intro-mark"><span class="intro-ae">Æ</span><span class="intro-wm">Aesthete</span><div class="intro-strand"><i></i><i></i><i></i><i></i><i></i></div></div>';
+      document.body.appendChild(intro);
+      const kill=()=>{ intro.classList.add('lift'); setTimeout(()=>intro.remove(),700); };
+      intro.addEventListener('click',kill);
+      setTimeout(kill,1450);
+    }
+  })();
+</script>
+</body>
+</html>
