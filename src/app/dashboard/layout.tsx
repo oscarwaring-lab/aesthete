@@ -1,7 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
 import { DashboardNav } from '@/components/DashboardNav'
-import { extractDnaAmbient } from '@/lib/dna-ambient'
-import type { AestheticDna } from '@/lib/aesthetic-dna'
 
 export default async function DashboardLayout({
   children,
@@ -9,25 +7,13 @@ export default async function DashboardLayout({
   children: React.ReactNode
 }) {
   const supabase = await createClient()
+  const { data: userData } = await supabase.auth.getUser()
 
-  // The nav accent follows the user's most recent DNA across every dashboard
-  // page, so resolve the dominant colour once here.
-  const [{ data: userData }, { data: latest }] = await Promise.all([
-    supabase.auth.getUser(),
-    supabase
-      .from('aesthetic_profiles')
-      .select('dna')
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle(),
-  ])
-
-  const dna = (latest as { dna: AestheticDna } | null)?.dna
-  const { dominantHex } = extractDnaAmbient(dna?.color?.palette)
-
+  // `.studio` scopes the dark liquid-glass token set + component styles
+  // (globals.css) so they never collide with the cream `.landing` system.
   return (
-    <div className="min-h-screen" style={{ background: '#16161e' }}>
-      <DashboardNav email={userData.user?.email} dominantHex={dominantHex} />
+    <div className="studio min-h-screen" style={{ background: '#16161e' }}>
+      <DashboardNav email={userData.user?.email} />
       <main>{children}</main>
     </div>
   )

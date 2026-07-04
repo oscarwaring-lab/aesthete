@@ -2,13 +2,35 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { UpgradeSuccessBanner } from '@/components/UpgradeSuccessBanner'
 import { DashboardShell } from '@/components/DashboardShell'
+import { StudioStats } from '@/components/StudioStats'
 import { ProfileGrid, type ProfileRow } from '@/components/ProfileGrid'
-import { extractDnaAmbient } from '@/lib/dna-ambient'
 
 type Subscription = {
   tier: string
   analyses_used: number
   analyses_limit: number
+}
+
+// Static warm fallbacks when the user has no profiles yet (spec §3): the three
+// stat glows fall back to the DNA warm accents, the ambient meshes to the
+// prototype's neutral studio blues.
+const FALLBACK_GLOWS: [string, string][] = [
+  ['var(--dna-amber)', 'var(--dna-amber)'],
+  ['var(--dna-sage)', 'var(--dna-sage)'],
+  ['var(--dna-rose)', 'var(--dna-rose)'],
+]
+const FALLBACK_A1 = '#3E6B8F'
+const FALLBACK_A2 = '#5C87A0'
+
+/** Blend pairs of the user's dominant identity colours across the 3 tiles. */
+function computeGlows(doms: string[]): [string, string][] {
+  if (doms.length === 0) return FALLBACK_GLOWS
+  const pick = (i: number) => doms[((i % doms.length) + doms.length) % doms.length]
+  return [
+    [pick(0), pick(1)],
+    [pick(2), pick(3)],
+    [pick(4), pick(0)],
+  ]
 }
 
 export default async function DashboardPage({
@@ -18,24 +40,29 @@ export default async function DashboardPage({
 }) {
   const supabase = await createClient()
 
-  // RLS scopes both queries to the signed-in user.
-  const [{ data: profiles }, { data: subscriptionRow }] = await Promise.all([
-    supabase
-      .from('aesthetic_profiles')
-      .select('id, dna, created_at, analysis_type, pillar_name, parent_profile_id')
-      .is('deleted_at', null)
-      .order('created_at', { ascending: false }),
-    supabase
-      .from('user_subscriptions')
-      .select('tier, analyses_used, analyses_limit')
-      .maybeSingle(),
-  ])
+  // RLS scopes every query to the signed-in user.
+  const [{ data: profiles }, { data: subscriptionRow }, { count: checkCountRaw }] =
+    await Promise.all([
+      supabase
+        .from('aesthetic_profiles')
+        .select(
+          'id, dna, created_at, analysis_type, pillar_name, parent_profile_id, creator_handle'
+        )
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('user_subscriptions')
+        .select('tier, analyses_used, analyses_limit')
+        .maybeSingle(),
+      // Total continuity checks logged by this user (spec §6).
+      supabase.from('continuity_checks').select('*', { count: 'exact', head: true }),
+    ])
 
   const rows = (profiles ?? []) as ProfileRow[]
+  const checkCount = checkCountRaw ?? 0
 
-  // Continuity score history for every profile, in one query. RLS scopes the
-  // rows to the signed-in user. Grouped by profile_id and ordered oldest-first
-  // so each sparkline reads left-to-right in time.
+  // Continuity score history for every profile, in one query. Grouped by
+  // profile_id and ordered oldest-first so each sparkline reads left-to-right.
   const checksHistory: Record<string, { score: number; date: string }[]> = {}
   if (rows.length > 0) {
     const { data: checks } = await supabase
@@ -59,11 +86,35 @@ export default async function DashboardPage({
     }
   }
 
-  // Tune the room to the user's most recent DNA. Falls back to Prussian blue
-  // when no profile exists yet — the space is ready, but not yet personalised.
-  const { dominantHex, paletteHex } = extractDnaAmbient(
-    rows[0]?.dna?.color?.palette
-  )
+  // ─── Stats + reactive palette (spec §3) ──────────────────────────
+  // Standard profiles are the "specimens on the wall"; pillars hang off them.
+  const standardRows = rows.filter((p) => p.analysis_type !== 'pillar')
+  const specimenCount = standardRows.length
+
+  const scoreList = standardRows
+    .map((p) => p.dna?.consistency_score)
+    .filter((n): n is number => typeof n === 'number')
+  const avgConsistency = scoreList.length
+    ? Math.round(scoreList.reduce((a, b) => a + b, 0) / scoreList.length)
+    : 0
+
+  // dominant = palette[0] of each profile; pool = every unique palette colour.
+  const doms = standardRows
+    .map((p) => p.dna?.color?.palette?.[0]?.hex)
+    .filter((h): h is string => Boolean(h))
+  const pool = [
+    ...new Set(
+      standardRows
+        .flatMap((p) => (p.dna?.color?.palette ?? []).map((s) => s.hex))
+        .filter(Boolean)
+    ),
+  ]
+
+  const glows = computeGlows(doms)
+  const ambientA1 = pool[0] ?? FALLBACK_A1
+  const ambientA2 = pool[Math.floor(pool.length / 2)] ?? pool[0] ?? FALLBACK_A2
+
+  const latestArchetype = standardRows[0]?.dna?.identity?.archetype
 
   // Fall back to free-tier defaults if no subscription row exists yet.
   const subscription: Subscription =
@@ -76,8 +127,7 @@ export default async function DashboardPage({
   // Stripe payments temporarily disabled (UI only) — the upgrade prompt is
   // suppressed while in early access. Restore the condition below to re-enable.
   // const showUpgradePrompt =
-  //   subscription.tier === 'free' &&
-  //   subscription.analyses_used >= 1
+  //   subscription.tier === 'free' && subscription.analyses_used >= 1
   const showUpgradePrompt = false
 
   const { upgraded } = await searchParams
@@ -87,151 +137,73 @@ export default async function DashboardPage({
   )
 
   return (
-    <DashboardShell dominantHex={dominantHex} paletteHex={paletteHex}>
-      <div style={{ minHeight: '100%', padding: 28 }}>
-      {upgraded === 'true' && (
-        <UpgradeSuccessBanner tier={subscription.tier} available={available} />
-      )}
+    <DashboardShell ambientA1={ambientA1} ambientA2={ambientA2}>
+      <div className="studio-main">
+        {upgraded === 'true' && (
+          <UpgradeSuccessBanner tier={subscription.tier} available={available} />
+        )}
 
-      {/* ─── Header row ─────────────────────────────────────────── */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'flex-start',
-          justifyContent: 'space-between',
-          marginBottom: 28,
-        }}
-      >
-        <div>
-          <h1
-            style={{
-              fontFamily: 'var(--font-playfair), Georgia, serif',
-              fontSize: 24,
-              fontWeight: 500,
-              color: '#f2f2f5',
-              letterSpacing: '-0.02em',
-              margin: 0,
-            }}
-          >
-            Your profiles
-          </h1>
-          <p
-            style={{
-              fontSize: 11.5,
-              color: 'rgba(255,255,255,0.55)',
-              marginTop: 5,
-            }}
-          >
-            Aesthetic DNA reports from your analysed feeds
-          </p>
-
-          {showUpgradePrompt ? (
-            <Link
-              href="/pricing"
-              style={{
-                display: 'inline-block',
-                fontSize: 11,
-                color: '#C4933A',
-                marginTop: 8,
-              }}
-            >
-              Upgrade to run more analyses →
-            </Link>
-          ) : (
-            <p
-              style={{
-                fontSize: 11,
-                color: 'rgba(255,255,255,0.55)',
-                marginTop: 8,
-              }}
-            >
-              {subscription.analyses_used} / {subscription.analyses_limit} analyses this month
-            </p>
-          )}
+        {/* ─── Header ──────────────────────────────────────────── */}
+        <div className="plate-tag">
+          <span className="no">The Studio</span>
+          <span className="rule" />
+          <span className="meta">Your identities</span>
         </div>
 
-        <Link
-          href="/dashboard/upload"
-          style={{
-            background: '#1E3A5F',
-            color: '#a0b8d4',
-            border: 'none',
-            padding: '9px 16px',
-            fontSize: 11,
-            textTransform: 'uppercase',
-            letterSpacing: '0.09em',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          + Begin new work
-        </Link>
-      </div>
+        <div className="studio-head">
+          <div>
+            <h1>Studio</h1>
+            <div className="subtitle">
+              Curator ·{' '}
+              <b>
+                {specimenCount} {specimenCount === 1 ? 'specimen' : 'specimens'}
+              </b>{' '}
+              on the wall
+              {latestArchetype ? <> · {latestArchetype}</> : null}
+            </div>
+          </div>
 
-      {rows.length === 0 ? (
-        <EmptyState />
-      ) : (
+          <div style={{ textAlign: 'right' }}>
+            {showUpgradePrompt ? (
+              <Link
+                href="/pricing"
+                style={{ fontSize: 11, letterSpacing: '0.04em', color: 'var(--amber)' }}
+              >
+                Upgrade to run more analyses →
+              </Link>
+            ) : (
+              <span
+                style={{
+                  fontSize: 11,
+                  letterSpacing: '0.04em',
+                  color: 'var(--ink-35)',
+                  textTransform: 'uppercase',
+                }}
+              >
+                {subscription.analyses_used} / {subscription.analyses_limit} analyses
+                this month
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* ─── Stats (warm reactive glows) ─────────────────────── */}
+        <StudioStats
+          specimenCount={specimenCount}
+          avgConsistency={avgConsistency}
+          checkCount={checkCount}
+          glows={glows}
+        />
+
+        {/* ─── Toolbar + specimen grid ─────────────────────────── */}
         <ProfileGrid profiles={rows} checksHistory={checksHistory} />
-      )}
 
-      {/* ─── Footer strip ───────────────────────────────────────── */}
-      <div
-        style={{
-          marginTop: 20,
-          borderTop: '1px solid rgba(196,147,58,0.09)',
-          paddingTop: 8,
-          textAlign: 'center',
-        }}
-      >
-        <span
-          style={{
-            fontSize: 10,
-            color: 'rgba(196,147,58,0.28)',
-            letterSpacing: '0.14em',
-            textTransform: 'uppercase',
-          }}
-        >
-          Studio · Aesthete
-        </span>
-      </div>
+        {/* ─── Footer ──────────────────────────────────────────── */}
+        <div className="studio-foot">
+          <span className="meta">© 2026 Aesthete · Studio</span>
+          <span className="meta">Aesthetic DNA · v2 schema</span>
+        </div>
       </div>
     </DashboardShell>
-  )
-}
-
-function BlankCanvasCard() {
-  return (
-    <Link href="/dashboard/upload" className="blank-canvas">
-      <span style={{ fontSize: 20, color: 'rgba(255,255,255,0.14)', lineHeight: 1 }}>+</span>
-      <span
-        style={{
-          fontSize: 10,
-          textTransform: 'uppercase',
-          letterSpacing: '0.12em',
-          color: 'rgba(255,255,255,0.18)',
-          marginTop: 8,
-        }}
-      >
-        Begin new work
-      </span>
-    </Link>
-  )
-}
-
-function EmptyState() {
-  return (
-    <div style={{ maxWidth: 240, margin: '0 auto', textAlign: 'center' }}>
-      <BlankCanvasCard />
-      <p
-        style={{
-          fontFamily: 'var(--font-playfair), Georgia, serif',
-          fontStyle: 'italic',
-          fontSize: 13,
-          color: 'rgba(255,255,255,0.35)',
-          marginTop: 14,
-        }}
-      >
-        Your first analysis awaits.
-      </p>
-    </div>
   )
 }

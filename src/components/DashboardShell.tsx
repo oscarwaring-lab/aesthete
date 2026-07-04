@@ -1,53 +1,40 @@
-'use client'
-
 import type { ReactNode } from 'react'
 
 /**
- * Wraps the main dashboard and tunes the room to the user's aesthetic.
+ * Ambient wrapper for the studio. Renders three drifting radial meshes behind
+ * the content:
+ *   • A1 / A2 are tinted reactively to the signed-in user's own DNA palette
+ *     (passed in from the page after profiles load), and
+ *   • A3 stays Prussian blue — a fixed cool anchor so the studio never loses
+ *     its cool identity however warm the user's palette runs (spec §3).
  *
- * A fixed background layer carries the DNA "ambient atmosphere": a base of
- * #16161e with a large radial wash falling from the top-centre in the
- * dominant colour, plus two smaller side washes from the rest of the palette.
- * Because the layer is fixed, the wash also reads behind the transparent,
- * sticky nav — coloured light filling the studio from the ceiling.
+ * The film-grain overlay lives on `.studio::after` (globals.css) so it covers
+ * every dashboard page; here we only paint the reactive atmosphere. Meshes are
+ * `position: fixed`, so they also read behind the translucent nav.
  */
 export function DashboardShell({
-  dominantHex,
-  paletteHex,
+  ambientA1,
+  ambientA2,
   children,
 }: {
-  dominantHex: string
-  paletteHex: string[]
+  ambientA1: string
+  ambientA2: string
   children: ReactNode
 }) {
-  const layers: string[] = [
-    // Ceiling wash — dominant DNA colour at ~8% opacity.
-    `radial-gradient(ellipse 80% 50% at 50% -5%, ${dominantHex}14, transparent 70%)`,
-  ]
-
-  // Two faint side washes once a full palette is available.
-  if (paletteHex.length >= 3) {
-    layers.push(
-      `radial-gradient(ellipse 40% 30% at 15% 60%, ${paletteHex[1]}0a, transparent 60%)`,
-      `radial-gradient(ellipse 35% 25% at 85% 70%, ${paletteHex[2]}08, transparent 55%)`
-    )
-  }
-
-  const background = `${layers.join(', ')}, #16161e`
-
   return (
-    <div style={{ position: 'relative', minHeight: '100%' }}>
-      <div
-        aria-hidden
-        style={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: 0,
-          background,
-          pointerEvents: 'none',
-        }}
-      />
-      <div style={{ position: 'relative', zIndex: 1 }}>{children}</div>
-    </div>
+    <>
+      <div className="ambient" aria-hidden>
+        <div
+          className="mesh a1"
+          style={{ background: `radial-gradient(circle, ${ambientA1}, transparent 66%)` }}
+        />
+        <div
+          className="mesh a2"
+          style={{ background: `radial-gradient(circle, ${ambientA2}, transparent 64%)` }}
+        />
+        <div className="mesh a3" />
+      </div>
+      <div className="studio-content">{children}</div>
+    </>
   )
 }

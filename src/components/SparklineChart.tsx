@@ -13,10 +13,12 @@ export function SparklineChart({
   scores,
   width = 120,
   height = 32,
+  className,
 }: {
   scores: number[]
   width?: number
   height?: number
+  className?: string
 }) {
   if (scores.length === 0) return null
 
@@ -27,6 +29,7 @@ export function SparklineChart({
   if (scores.length === 1) {
     return (
       <svg
+        className={className}
         width={width}
         height={height}
         viewBox={`0 0 ${width} ${height}`}
@@ -60,6 +63,7 @@ export function SparklineChart({
 
   return (
     <svg
+      className={className}
       width={width}
       height={height}
       viewBox={`0 0 ${width} ${height}`}

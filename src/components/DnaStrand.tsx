@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 import type { AestheticDna } from '@/lib/aesthetic-dna'
 
 const MIN_BANDS = 6
@@ -57,51 +58,28 @@ function buildBandColors(dna: AestheticDna): string[] {
 }
 
 /**
- * Deterministic height (35%–100%) for a band, derived from its colour + index
- * so server and client render identically (no hydration mismatch, no Math.random).
- */
-function bandHeight(color: string, index: number): number {
-  const [r, g, b] = parseHex(color)
-  const seed = (r * 7 + g * 13 + b * 17 + index * 53) % 100
-  return 38 + (seed / 100) * 62 // 38% – 100%
-}
-
-/**
- * The animated "DNA strand": a row of flex bands that rise on entrance
- * (staggered) and then breathe forever. Pure CSS animation via globals.css.
+ * The DNA strand: a flat row of equal palette bands with a slow diagonal
+ * shimmer sweep (staggered per band, gated by `prefers-reduced-motion` in
+ * globals.css). Restyled from the old breathing bar chart to match the
+ * studio prototype's specimen card.
  */
 export function DnaStrand({ dna }: { dna: AestheticDna }) {
   const colors = buildBandColors(dna)
 
   if (colors.length === 0) {
-    return <div style={{ height: 64 }} aria-hidden />
+    return <div className="strand" aria-hidden />
   }
 
   return (
-    <div
-      style={{ display: 'flex', alignItems: 'flex-end', gap: 2, height: 64 }}
-      aria-hidden
-    >
-      {colors.map((color, i) => {
-        const riseDelay = i * 0.05
-        const breatheDelay = riseDelay + 0.65
-        const breatheDuration = 4 + i * 0.35
-        return (
-          <span
-            key={i}
-            className="dash-band"
-            style={{
-              flex: 1,
-              height: `${bandHeight(color, i)}%`,
-              background: color,
-              borderRadius: '1px 1px 0 0',
-              transformOrigin: 'bottom',
-              animation: `dash-band-rise 0.55s cubic-bezier(0.16,1,0.3,1) both, dash-band-breathe ${breatheDuration}s ease-in-out infinite`,
-              animationDelay: `${riseDelay}s, ${breatheDelay}s`,
-            }}
-          />
-        )
-      })}
+    <div className="strand" aria-hidden>
+      {colors.map((color, i) => (
+        <span
+          key={i}
+          style={
+            { background: color, '--sd': `${(i % 6) * 0.4}s` } as CSSProperties
+          }
+        />
+      ))}
     </div>
   )
 }
