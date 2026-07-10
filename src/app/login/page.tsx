@@ -118,6 +118,10 @@ function LoginForm() {
               autoComplete="current-password"
             />
 
+            <p className="auth-switch -mt-2 text-right">
+              <Link href="/forgot-password">Forgot password?</Link>
+            </p>
+
             {error && <p className="auth-error">{error}</p>}
 
             <button type="submit" disabled={loading} className="btn-ink">
