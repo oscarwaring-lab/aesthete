@@ -1097,7 +1097,19 @@ html { scroll-behavior: smooth; }
 /* ── The graded field ──
  * Full-bleed and run up under the fixed glass nav on purpose: the nav then
  * reads as tinted glass over the creator's colour, the way it floats over
- * the landing hero. Top padding lives on the plate, not on `.share-main`. */
+ * the landing hero. Top padding lives on the plate, not on `.share-main`.
+ *
+ * ⚠ The Instagram specimen is a 4:5 portrait crop of this page, and the top
+ * padding below is what positions it. Start the crop ~90px down — BELOW the
+ * fixed nav, just above the lab strip — never from the top of the page. A
+ * top-anchored crop drags the Æ monogram and the "Join today" pill into the
+ * frame, and a CTA baked into a specimen reads as an ad, which is the wrong
+ * signal for the feed.
+ *
+ * At 390px wide the crop is 488px tall (w x 5/4) and spans y 90–578: lab
+ * strip (96), hairline (133), frame edge (164), card (175), "Curated for
+ * @handle" (236), archetype (260–350), signature (358–412), then card body
+ * to the cut. If you change the padding below, re-measure that span. */
 .share .share-plate {
   position: relative;
   overflow: hidden;
