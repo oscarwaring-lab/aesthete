@@ -1,41 +1,11 @@
 import type { Metadata } from 'next'
-import { cache } from 'react'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { createAdminClient } from '@/lib/supabase/admin'
 import { DnaReport } from '@/components/DnaReport'
 import { EditorialNav } from '@/components/editorial/EditorialNav'
 import { EditorialFooter } from '@/components/editorial/EditorialFooter'
 import { deriveSharePlate } from '@/lib/share-plate'
-import type { AestheticDna } from '@/lib/aesthetic-dna'
-
-type ShareProfile = {
-  dna: AestheticDna
-  share_slug: string
-  created_at: string
-  image_urls: string[] | null
-  creator_handle: string | null
-  deleted_at: string | null
-}
-
-/**
- * Public page — no authenticated user, so we read with the service-role client
- * (server-only) and look up purely by the unguessable share slug.
- *
- * Memoised with React `cache` so `generateMetadata` and the page itself share
- * one round trip instead of querying twice per request.
- */
-const getSharedProfile = cache(async (slug: string): Promise<ShareProfile | null> => {
-  const admin = createAdminClient()
-
-  const { data } = await admin
-    .from('aesthetic_profiles')
-    .select('dna, share_slug, created_at, image_urls, creator_handle, deleted_at')
-    .eq('share_slug', slug)
-    .single()
-
-  return (data as ShareProfile | null) ?? null
-})
+import { getSharedProfile } from '@/lib/share-profile'
 
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -54,8 +24,15 @@ function formatPlateDate(date: string): string {
   return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`
 }
 
-// Prefer the creative-director signature as the share preview description,
-// falling back to the identity summary for older (v1) profiles.
+/**
+ * Link preview. A share URL's whole job is to be pasted somewhere, so the
+ * unfurl carries the archetype and score rather than the site-wide default.
+ *
+ * The description prefers the creative-director signature, falling back to the
+ * identity summary for older (v1) profiles. The image comes from the colocated
+ * `opengraph-image` route — a file-convention image, so Next resolves it to an
+ * absolute URL without the app needing a `metadataBase`.
+ */
 export async function generateMetadata({
   params,
 }: {
@@ -64,12 +41,25 @@ export async function generateMetadata({
   const { slug } = await params
   const profile = await getSharedProfile(slug)
 
-  if (!profile) return {}
+  // A withdrawn profile keeps a generic preview and stays out of search —
+  // the creator pulled it from public view.
+  if (!profile || profile.deleted_at) {
+    return {
+      title: 'Aesthetic DNA — Aesthete',
+      robots: { index: false, follow: false },
+    }
+  }
 
   const dna = profile.dna
+  const title = `${dna.identity.archetype} — ${dna.consistency_score}/100`
   const description = dna.creative_brief?.signature ?? dna.identity.summary
 
-  return { description }
+  return {
+    title,
+    description,
+    openGraph: { title, description, siteName: 'Aesthete', type: 'article' },
+    twitter: { card: 'summary_large_image', title, description },
+  }
 }
 
 /**

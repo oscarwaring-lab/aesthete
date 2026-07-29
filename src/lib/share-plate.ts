@@ -28,7 +28,22 @@ export type SharePlate = {
   drift: string
   /** True when no palette was available and the neutral cream plate is used. */
   neutral: boolean
+  /**
+   * The individual graded stops. The plate composes them into layered radial
+   * gradients; the OG image re-composes them into a single linear gradient,
+   * because Satori only handles simple gradients. Sharing the stops keeps the
+   * link preview graded from the same colours as the page it opens.
+   */
+  stops: { hi: string; lo: string; baseTop: string; baseBottom: string }
 }
+
+/** Neutral stops behind the cream fallback plate. */
+const NEUTRAL_STOPS = {
+  hi: '#faf9f5',
+  lo: '#f3f1ea',
+  baseTop: '#faf9f5',
+  baseBottom: '#f3f1ea',
+} as const
 
 /** Lightness/saturation targets for each plate layer, per card theme. */
 const GRADE = {
@@ -113,6 +128,7 @@ export function deriveSharePlate(
       background: 'linear-gradient(155deg, var(--cream), var(--cream-2))',
       drift: 'transparent',
       neutral: true,
+      stops: { ...NEUTRAL_STOPS },
     }
   }
 
@@ -137,5 +153,6 @@ export function deriveSharePlate(
     ].join(', '),
     drift: grade(dominant, g.drift, { min: 0.4, max: 0.72 }),
     neutral: false,
+    stops: { hi, lo, baseTop, baseBottom },
   }
 }
