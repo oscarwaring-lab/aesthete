@@ -12,6 +12,7 @@ import {
   buildUserPrompt,
   parseAestheticDna,
   PROMPT_VERSION,
+  type AestheticDna,
 } from '@/lib/aesthetic-dna'
 
 const MODEL = 'gpt-4o'
@@ -91,8 +92,20 @@ async function ensureStorageBucket(admin: AdminClient): Promise<void> {
 
 /**
  * Upload up to MAX_STORED_IMAGES source images to public storage and return
- * their public URLs. A failure on any individual image is logged and skipped
- * so a storage hiccup never blocks the analysis itself.
+ * their public URLs. A storage failure never blocks the analysis itself.
+ *
+ * THE ORDERING INVARIANT — `image_urls[i]` is the (i+1)th image the model was
+ * shown. The DNA's evidence bindings are 1-based indices into the images as
+ * presented to the model (see `Evidence` in src/lib/aesthetic-dna.ts), and they
+ * are only meaningful because this array is a positionally faithful prefix of
+ * `files`, which is also the order the image parts are handed to the Vision
+ * call. So this function must never sort, filter or dedupe.
+ *
+ * That is why a failed upload BREAKS rather than skips: skipping would compact
+ * the array and shift every later URL down a slot, so a binding would resolve
+ * to the wrong photograph — silently, and on a page a creator reads closely.
+ * Stopping short instead yields a shorter but correctly aligned prefix; indices
+ * past its end simply do not resolve, and the report falls back to no exemplar.
  */
 async function uploadSourceImages(
   admin: AdminClient,
@@ -112,13 +125,69 @@ async function uploadSourceImages(
       .from(STORAGE_BUCKET)
       .upload(path, buffers[i], { contentType: file.type, upsert: true })
     if (error) {
-      console.error(`Failed to upload source image ${path}:`, error)
-      continue
+      console.error(
+        `Failed to upload source image ${path} — stopping after ${urls.length} ` +
+          'to keep image_urls aligned with the order the model saw:',
+        error
+      )
+      break
     }
     const { data } = admin.storage.from(STORAGE_BUCKET).getPublicUrl(path)
     urls.push(data.publicUrl)
   }
   return urls
+}
+
+/** The dimensions the v3 prompt asks to ground in a specific image. */
+const EVIDENCE_DIMENSIONS = ['color', 'composition', 'mood'] as const
+
+/**
+ * Evidence bindings are mandatory in the prompt but optional in the schema, so
+ * that one bad exemplar costs us that exemplar and nothing else. This is where
+ * that guarantee is enforced, in place on `dna`, before it is persisted.
+ *
+ * A binding is dropped when `image_index` is not an integer within 1..N (N being
+ * the number of images actually sent to the model) or when `reasoning` is blank.
+ * Every drop is logged, because the failure mode otherwise is a slow, invisible
+ * decline in report quality.
+ *
+ * `storedCount` is only used to warn: an index beyond the stored prefix is a
+ * valid binding whose frame we did not keep, so it resolves to nothing and the
+ * report falls back to no exemplar. It is not wrong, just unusable, and worth
+ * seeing in the logs — see MAX_STORED_IMAGES.
+ */
+function sanitiseEvidence(dna: AestheticDna, imageCount: number, storedCount: number): void {
+  for (const dimension of EVIDENCE_DIMENSIONS) {
+    const evidence = dna[dimension].evidence
+    if (!evidence) continue
+
+    const { image_index: index, reasoning } = evidence
+
+    let dropReason: string | null = null
+    if (!Number.isInteger(index)) {
+      dropReason = `image_index ${JSON.stringify(index)} is not an integer`
+    } else if (index < 1 || index > imageCount) {
+      dropReason = `image_index ${index} is outside 1..${imageCount}`
+    } else if (reasoning.trim().length === 0) {
+      dropReason = 'reasoning is blank'
+    }
+
+    if (dropReason) {
+      console.warn(`Dropped ${dimension} evidence — ${dropReason}.`)
+      dna[dimension].evidence = undefined
+      continue
+    }
+
+    if (index > storedCount) {
+      console.warn(
+        `Kept ${dimension} evidence citing image ${index}, but only ${storedCount} ` +
+          'source image(s) were stored — the card will have no frame to show.'
+      )
+    }
+
+    // Persist the trimmed reasoning so no stray whitespace reaches the report.
+    dna[dimension].evidence = { image_index: index, reasoning: reasoning.trim() }
+  }
 }
 
 export async function POST(request: Request) {
@@ -323,6 +392,11 @@ export async function POST(request: Request) {
   } catch (err) {
     console.error('Source image upload failed:', err)
   }
+
+  // 5b. Drop any evidence binding that does not point at a real image in the set
+  //     the model was shown. Runs after the uploads resolve so it can also flag
+  //     bindings whose frame was never stored. Never fails the analysis.
+  sanitiseEvidence(parseResult.dna, files.length, imageUrls.length)
 
   // 6. Persist with the service-role client (RLS-bypassing, server-only).
   //    A named pillar becomes a 'pillar' row linked to its parent; otherwise
