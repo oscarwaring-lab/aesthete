@@ -60,7 +60,12 @@ function sanitiseCreatorHandle(raw: FormDataEntryValue | null): string | null {
 }
 
 const STORAGE_BUCKET = 'aesthetic-images'
-const MAX_STORED_IMAGES = 4
+
+// Store every image we analysed, not just the first few. A v3 evidence binding
+// can name any image in the set (see `Evidence` in src/lib/aesthetic-dna.ts), and
+// it can only resolve to a frame if that frame was kept — so the storage cap has
+// to match the analysis cap. The report gallery still shows only the first four.
+const MAX_STORED_IMAGES = MAX_IMAGES
 
 type AdminClient = ReturnType<typeof createAdminClient>
 
@@ -151,10 +156,11 @@ const EVIDENCE_DIMENSIONS = ['color', 'composition', 'mood'] as const
  * Every drop is logged, because the failure mode otherwise is a slow, invisible
  * decline in report quality.
  *
- * `storedCount` is only used to warn: an index beyond the stored prefix is a
- * valid binding whose frame we did not keep, so it resolves to nothing and the
- * report falls back to no exemplar. It is not wrong, just unusable, and worth
- * seeing in the logs — see MAX_STORED_IMAGES.
+ * `storedCount` is only used to warn, never to drop: an index beyond the stored
+ * prefix is a correct binding whose frame we failed to keep, so it resolves to
+ * nothing and the report falls back to no exemplar. Since MAX_STORED_IMAGES now
+ * matches MAX_IMAGES, this can only mean an upload failed, which is worth seeing
+ * in the logs rather than silently costing us an exemplar.
  */
 function sanitiseEvidence(dna: AestheticDna, imageCount: number, storedCount: number): void {
   for (const dimension of EVIDENCE_DIMENSIONS) {
