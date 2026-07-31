@@ -1,6 +1,9 @@
 import { z } from 'zod'
 
-export const PROMPT_VERSION = 'v3'
+// v3.1 is a voice change only — the schema is byte-identical to v3. It earns its
+// own version so a row's `reasoning` register can be read off `prompt_version`
+// without opening the JSON: v3 rows caption the frame, v3.1 rows read the eye.
+export const PROMPT_VERSION = 'v3.1'
 
 /** A single palette entry: a hex value plus a human-readable name. */
 const ColorSwatch = z.object({
@@ -148,12 +151,12 @@ Output ONLY valid JSON matching exactly this shape, with no markdown, no code fe
 Rules:
 - "keywords": 3-10 single words or short phrases.
 - "palette": 3-8 swatches, each with a valid 6-digit hex (e.g. "#1a1a2e") and a descriptive name.
-- "evidence": required on "color", "composition" and "mood". Having written the dimension, point at the ONE image from the set that most strongly demonstrates it, and say what in that image demonstrates it.
+- "evidence": required on "color", "composition" and "mood". Having written the dimension, point at the ONE image from the set that most strongly demonstrates it, then use that frame to tell the creator something true about how they see.
     - "image_index": an integer from 1 to N, naming that exemplar. It must be an image you were actually shown — never cite a frame outside 1 to N, and never invent one.
     - Choose each exemplar on its own terms. Composition: the frame where the creator's compositional instinct is clearest. Mood: the frame that most fully embodies the mood you described. Colour: the frame where the palette is most concentrated and legible, where a viewer could read the swatches straight off the image. One image may serve two dimensions if it genuinely is the strongest for both.
-    - "reasoning": one or two sentences on what is visible in THAT image. Name the element — the actual horizon, wall, garment, window, shadow, or colour block you are looking at. "The bleached concrete wall fills two thirds of the frame and the single figure sits low against it" is evidence. "Strong composition with excellent use of negative space" is not — it could describe any photograph in any set, and is therefore worthless here.
-    - Write it the way a creative director points at a frame on a contact sheet: precise, declarative, no warm-up and no summary. Two sentences is the ceiling, not the target. Length is not the point; specificity is.
-    - If you genuinely cannot tie a dimension to one particular image, omit "evidence" for that dimension entirely. An honest gap is better than a false attribution — never reach for a detail you cannot actually see in order to fill the field.
+    - "reasoning": two sentences, second person, about the creator's eye rather than their photograph. The first names something concrete you can genuinely see in THAT frame — the actual wall, the hour of day, the doorway, how far back they stood, which two colours meet — with the creator as its grammatical subject ("You stand back and let…"), never the scene ("The sunlit view…"). The second says what that choice reveals about how they see, as a full sentence with its own verb.
+      This field is rewritten by a second, dedicated pass (see EVIDENCE_REASONING_SYSTEM_PROMPT), so keep it short and true rather than polished. What matters here is that the anchor is real.
+    - If you genuinely cannot tie a dimension to one particular image, omit "evidence" for that dimension entirely. An honest gap is better than a false attribution — never reach for a detail you cannot actually see, and never stretch a read further than the frame supports.
 - "consistency_score": an integer 0-100 reflecting how visually unified the set is (higher = more consistent). DERIVE this from evidence — do not guess a plausible-looking number, and never default to a round figure. Before you settle on a value, work through these steps internally:
     1. Identify the specific deviations — name the images or recurring patterns that break the dominant aesthetic (an off-palette shot, a composition that defies the pattern, a tonal or mood outlier).
     2. Count and weight them. Colour-grade and palette breaks are the heaviest; tonal/mood breaks are moderate; composition breaks are the lightest. Two palette breaks hurt the score more than two framing quirks.
@@ -177,10 +180,10 @@ export function buildUserPrompt(imageCount: number): string {
   return `Here are ${imageCount} images from this creator's feed, provided as a single set. Analyse them together and return the Aesthetic DNA JSON described in your instructions. Sample actual colours from the images for the palette.
 
 The ${imageCount} images follow in order: the first is Image 1, the last is Image ${imageCount}. Ground three dimensions in a specific frame from that set, using this numbering (1-based) for every "image_index":
-- "composition.evidence": the image where this compositional instinct is clearest, and the compositional feature in it that shows this.
-- "mood.evidence": the image that most embodies the mood, and what in it creates that feeling.
-- "color.evidence": the image where the palette reads most clearly, tying your swatches to what is actually on screen.
-Each "reasoning" is one or two sentences naming something you can genuinely see in that image — not a sentence that would fit any photograph. Omit a dimension's "evidence" rather than invent one.
+- "composition.evidence": the image where this compositional instinct is clearest, and what that instinct says about the way they see.
+- "mood.evidence": the image that most embodies the mood, and the choice underneath it — the hour they shoot, the light they wait for, the distance they keep.
+- "color.evidence": the image where the palette reads most clearly, and what their eye is doing with those colours.
+Each "reasoning" is two sentences, second person, about the creator's eye. The first names a concrete particular you could only have got from looking at that exact frame, with the creator as its subject rather than the scene. The second says what that choice reveals about how they see. Keep it short and true — a later pass does the polishing. Omit a dimension's "evidence" rather than invent one.
 
 Also fill the "creative_brief" object — this is a working creative brief, so be sharp and specific to THIS feed:
 - "signature": ONE sentence only, a creative-director logline the creator could use as their north star — not a description.
@@ -190,6 +193,136 @@ Also fill the "creative_brief" object — this is a working creative brief, so b
 - "evolution": one paragraph on a natural next step that extends this DNA, referencing what is already present in these images.
 
 Return JSON only.`
+}
+
+/** The dimensions the prompt asks to ground in a specific image. */
+export const EVIDENCE_DIMENSIONS = ['color', 'composition', 'mood'] as const
+
+export type EvidenceDimension = (typeof EVIDENCE_DIMENSIONS)[number]
+
+/**
+ * Temperature for the evidence-reasoning pass, deliberately far below the 0.4
+ * the analysis itself runs at.
+ *
+ * The two calls want opposite things. The analysis wants range — archetype
+ * names, palette reads and creative-brief directions all get worse when the
+ * model plays it safe. The evidence reasoning wants obedience: it has a fixed
+ * two-sentence shape and a list of words it must not use, and at 0.4 gpt-4o
+ * reliably ignored both, reverting to the caption idiom it has seen a million
+ * times. Since temperature is per-request, buying precision here without
+ * flattening the rest of the report means giving this field its own call.
+ *
+ * 0.2 measured better than both 0.4 and 0 on the same set. Do not take this to
+ * zero: greedy decoding fell back HARDER into the caption idiom, reverting the
+ * sentence subject to the photograph and reaching for "timeless atmosphere" and
+ * "evokes a warm nostalgia" — the very phrases the prompt forbids. The idiom is
+ * the highest-probability continuation, so removing sampling noise removes the
+ * escape from it.
+ */
+export const EVIDENCE_REASONING_TEMPERATURE = 0.2
+
+/**
+ * Voice spec for the evidence reasoning, split out of SYSTEM_PROMPT so it is
+ * the only thing the model is doing when it writes these three sentences.
+ * Competing with fifty lines of unrelated schema rules measurably cost it.
+ */
+export const EVIDENCE_REASONING_SYSTEM_PROMPT = `You are a creative director writing the single line that sits under a frame in a creator's visual-identity report, next to the claim it justifies.
+
+The creator took these photographs. They can see them. Describing a frame back to them tells them nothing they do not already know — your job is to use the frame as evidence for a read on HOW they see, and to tell them something true about their own eye that they may never have put into words.
+
+Three examples at the required standard, from other creators' feeds. Match their shape and their nerve, never their content:
+· "Skin stays warm while everything behind it goes grey-green. You protect that separation in every frame, and it is why the people read first and the room second."
+· "You stand further back than most people would and let the empty floor take the bottom third. The distance is the point — you photograph rooms that happen to have someone in them."
+· "You wait until the strip light is the only source. That flat, unromantic light does the emotional work here, and you trust it to."
+
+Each names something genuinely in its frame — a colour separation, an empty foreground, a single hard light source — and extends it into a read on the creator. The anchor keeps you honest; the read is what makes it worth reading.
+
+STRUCTURE — exactly two sentences, in this order:
+  Sentence 1, the anchor. What they did in this frame, named concretely: the actual wall, the hour of day, the doorway, how far back they stood, which two colours meet. Something a reader could point at. The creator must be its grammatical subject — "You stand back and let…", "Your eye goes to…", "Shooting at dusk, you…". Never "The sunlit scene…", "The twilight cityscape…". The moment the photograph becomes the subject, the sentence turns back into a caption.
+  Sentence 2, the read. What that choice says about how they see. A full sentence with its own subject and its own finite verb. It must NOT begin with a participle ("highlighting…", "creating…", "capturing…") or trail off sentence 1 as a comma clause — that shape is the machine-caption template, and filler always hides in it.
+Sentence 1 alone is a caption. Sentence 2 alone is a horoscope. Neither is worth sending.
+
+RULES:
+- Reach for verbs of method: you shoot, wait for, stand back from, crop to, let dominate, protect, refuse, keep returning to. Vary how the two sentences open — do not begin both with "You".
+- Liking a subject is not an instinct. "Your interest in old architecture", "your attraction to coastal colour", "your focus on urban life" only name what they point the camera at, which they already know. Read the method instead: where they stand, what they wait for, what they leave out, what they let dominate, which two things they keep putting beside each other, what they are willing to lose to shadow.
+- Naming the feeling a picture produces — tranquility, nostalgia, serenity, calm, wanderlust — is filler, not a read. The read is about their method, not the viewer's mood.
+- These words are forbidden. Scan each sentence before returning it and rewrite any that contains one: capture, captures, capturing, evokes, embodies, exemplifies, showcases, demonstrates, highlights, emphasizes, reflects, essence, atmosphere, "a sense of", "the viewer's gaze". Photographers do not capture things here — they stand somewhere, wait for something, and leave something out.
+- Do not name the dimension back. The colour line must not recite the palette (those swatches already sit on screen beside it), the composition line must not use the word "composition", the mood line must not say "the mood of X".
+- Anchor every read to something actually visible in the cited frame. Never invent a detail to make a better sentence, and never stretch a read further than the frame supports. If the frame will not carry the read, write a smaller, truer one.
+- The read may draw on the whole set — a habit is only a habit if it recurs — but the anchor must come from the cited frame.
+- Last test: could this line be said about a different creator's feed? If yes it has failed, either as description or as flattery. It must be sayable only about this body of work.
+
+Precise, declarative, opinionated without arrogance. One earned observation, not a pile of adjectives.
+
+Return ONLY a JSON object keyed by the dimensions you were asked for, each value the two-sentence string. No markdown, no code fences, no commentary.`
+
+export type EvidenceReasoningTarget = {
+  dimension: EvidenceDimension
+  imageIndex: number
+  description: string
+}
+
+/**
+ * User prompt for the reasoning pass. The full set is re-sent so a read can
+ * reference a recurring habit, but each line stays anchored to its cited frame.
+ */
+export function buildEvidenceReasoningPrompt(
+  imageCount: number,
+  archetype: string,
+  targets: EvidenceReasoningTarget[]
+): string {
+  const lines = targets.map(
+    (t) =>
+      `- "${t.dimension}" — cited frame: Image ${t.imageIndex}. The claim this line has to justify: ${t.description}`
+  )
+
+  return `Here are the same ${imageCount} images from this creator's feed, in order: the first is Image 1, the last is Image ${imageCount}.
+
+This feed has already been analysed. Its archetype is "${archetype}". Write the evidence line for each dimension below, anchored to the frame named for it:
+
+${lines.join('\n')}
+
+Return JSON only, exactly this shape, with two sentences per value:
+{${targets.map((t) => `\n  "${t.dimension}": string`).join(',')}\n}`
+}
+
+const EvidenceReasoningSchema = z.object({
+  color: z.string().min(1).optional(),
+  composition: z.string().min(1).optional(),
+  mood: z.string().min(1).optional(),
+})
+
+export type EvidenceReasoningResult =
+  | { ok: true; reasoning: Partial<Record<EvidenceDimension, string>> }
+  | { ok: false; error: string }
+
+/**
+ * Parse the reasoning pass. Returns only non-blank strings for the dimensions
+ * that were asked for; anything else is the caller's cue to keep what it had.
+ */
+export function parseEvidenceReasoning(
+  raw: string,
+  requested: EvidenceDimension[]
+): EvidenceReasoningResult {
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(stripCodeFences(raw))
+  } catch {
+    return { ok: false, error: 'Reasoning pass did not return valid JSON.' }
+  }
+
+  const result = EvidenceReasoningSchema.safeParse(parsed)
+  if (!result.success) {
+    return { ok: false, error: 'Reasoning pass did not match the expected shape.' }
+  }
+
+  const reasoning: Partial<Record<EvidenceDimension, string>> = {}
+  for (const dimension of requested) {
+    const value = result.data[dimension]?.trim()
+    if (value) reasoning[dimension] = value
+  }
+
+  return { ok: true, reasoning }
 }
 
 /** Strip a ```json ... ``` (or ``` ... ```) fence if the model added one. */

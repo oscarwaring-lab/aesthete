@@ -12,7 +12,14 @@ import {
   buildUserPrompt,
   parseAestheticDna,
   PROMPT_VERSION,
+  EVIDENCE_DIMENSIONS,
+  EVIDENCE_REASONING_SYSTEM_PROMPT,
+  EVIDENCE_REASONING_TEMPERATURE,
+  buildEvidenceReasoningPrompt,
+  parseEvidenceReasoning,
   type AestheticDna,
+  type EvidenceDimension,
+  type EvidenceReasoningTarget,
 } from '@/lib/aesthetic-dna'
 
 const MODEL = 'gpt-4o'
@@ -143,9 +150,6 @@ async function uploadSourceImages(
   return urls
 }
 
-/** The dimensions the v3 prompt asks to ground in a specific image. */
-const EVIDENCE_DIMENSIONS = ['color', 'composition', 'mood'] as const
-
 /**
  * Evidence bindings are mandatory in the prompt but optional in the schema, so
  * that one bad exemplar costs us that exemplar and nothing else. This is where
@@ -193,6 +197,87 @@ function sanitiseEvidence(dna: AestheticDna, imageCount: number, storedCount: nu
 
     // Persist the trimmed reasoning so no stray whitespace reaches the report.
     dna[dimension].evidence = { image_index: index, reasoning: reasoning.trim() }
+  }
+}
+
+/**
+ * Rewrite the evidence reasoning in a second, low-temperature call.
+ *
+ * The analysis runs at 0.4 because the archetype, palette and creative brief
+ * are worse when the model plays safe. These three sentences want the opposite:
+ * a fixed two-sentence shape and a list of banned words, both of which 0.4
+ * reliably ignored. Temperature is per-request, so precision here without
+ * flattening the rest of the report costs one extra call.
+ *
+ * Runs after `sanitiseEvidence` so it only spends tokens on bindings that
+ * survived, and only ever overwrites `reasoning` — `image_index` is the first
+ * pass's choice and stays untouched.
+ *
+ * Best-effort by construction. A failed request, unparseable output or a
+ * missing key all leave the first pass's reasoning in place, because a plainer
+ * sentence is worth far more than a blank card.
+ */
+async function refineEvidenceReasoning(
+  openai: OpenAI,
+  dna: AestheticDna,
+  imageParts: ChatCompletionContentPart[]
+): Promise<void> {
+  const targets: EvidenceReasoningTarget[] = []
+  for (const dimension of EVIDENCE_DIMENSIONS) {
+    const evidence = dna[dimension].evidence
+    if (!evidence) continue
+    targets.push({
+      dimension,
+      imageIndex: evidence.image_index,
+      description: dna[dimension].description,
+    })
+  }
+
+  if (targets.length === 0) return
+
+  let completion
+  try {
+    completion = await openai.chat.completions.create({
+      model: MODEL,
+      temperature: EVIDENCE_REASONING_TEMPERATURE,
+      response_format: { type: 'json_object' },
+      messages: [
+        { role: 'system', content: EVIDENCE_REASONING_SYSTEM_PROMPT },
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text: buildEvidenceReasoningPrompt(
+                imageParts.length,
+                dna.identity.archetype,
+                targets
+              ),
+            },
+            ...imageParts,
+          ],
+        },
+      ],
+    })
+  } catch (err) {
+    console.error('Evidence reasoning pass failed — keeping first-pass text:', err)
+    return
+  }
+
+  const result = parseEvidenceReasoning(
+    completion.choices[0]?.message?.content ?? '',
+    targets.map((t) => t.dimension)
+  )
+
+  if (!result.ok) {
+    console.warn(`Evidence reasoning pass discarded — ${result.error}`)
+    return
+  }
+
+  for (const dimension of Object.keys(result.reasoning) as EvidenceDimension[]) {
+    const refined = result.reasoning[dimension]
+    const evidence = dna[dimension].evidence
+    if (refined && evidence) evidence.reasoning = refined
   }
 }
 
@@ -403,6 +488,10 @@ export async function POST(request: Request) {
   //     the model was shown. Runs after the uploads resolve so it can also flag
   //     bindings whose frame was never stored. Never fails the analysis.
   sanitiseEvidence(parseResult.dna, files.length, imageUrls.length)
+
+  // 5c. Rewrite the surviving reasoning at low temperature. Best-effort: on any
+  //     failure the first pass's text stands, so this can never sink a report.
+  await refineEvidenceReasoning(openai, parseResult.dna, imageParts)
 
   // 6. Persist with the service-role client (RLS-bypassing, server-only).
   //    A named pillar becomes a 'pillar' row linked to its parent; otherwise
