@@ -471,18 +471,8 @@ body {
 .editorial .auth-switch a { color: var(--prussian); border-bottom: 1px solid var(--prussian); padding-bottom: 1px; transition: opacity 0.2s; }
 .editorial .auth-switch a:hover { opacity: 0.55; }
 
-/* ─── Share — dark report card in an editorial cream frame ─────────── */
-.editorial .share-main { flex: 1; padding: 132px 24px 80px; }
-.editorial .share-intro { max-width: 42rem; margin: 0 auto 40px; text-align: center; }
-.editorial .share-intro .label { font-size: 10.5px; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: var(--prussian-mid); margin-bottom: 16px; }
-.editorial .share-intro h1 { font-family: var(--serif); font-size: clamp(26px, 3.4vw, 40px); font-weight: 400; font-style: italic; line-height: 1.15; letter-spacing: -0.015em; color: var(--ink); }
-.editorial .share-cta { max-width: 42rem; margin: 56px auto 0; padding-top: 40px; border-top: 1px solid var(--rule); text-align: center; display: flex; flex-direction: column; align-items: center; gap: 20px; }
-.editorial .share-cta p { font-size: 15px; line-height: 1.7; color: var(--ink-mid); }
-.editorial .share-cta .btn-prussian { width: auto; }
-/* The card is a dark-studio component; re-establish its light text inheritance
- * so elements that rely on the dark theme's foreground (e.g. the archetype
- * title) don't fall back to the editorial ink colour. */
-.editorial .share-report { color: var(--foreground); }
+/* Share page styles live in the `.share` Liquid Glass block at the end of
+ * this file, alongside `.landing` and `.studio`. */
 
 /* ─── Responsive (shared cream pages) ──────────────────────────── */
 @media (max-width: 860px) {
@@ -504,12 +494,6 @@ body {
 }
 @media (max-width: 520px) {
   .profile-grid { grid-template-columns: 1fr; }
-}
-
-/* ─── Phone refinements (≤560px) ───────────────────────────────── */
-@media (max-width: 560px) {
-  /* Share frame: a touch less top padding under the fixed nav */
-  .editorial .share-main { padding-top: 108px; }
 }
 
 /* ─── Legal pages (privacy / terms) — editorial cream prose ───────── */
@@ -1091,4 +1075,173 @@ html { scroll-behavior: smooth; }
   .studio .strand span::after { animation: none; opacity: 0; }
   .studio .card { transition: none; }
   .studio .obs { opacity: 1; transform: none; transition: none; }
+}
+
+/* ════════════════════════════════════════════════════════════════
+ * SHARE — the reactive specimen plate
+ * Scoped under `.share` (the page root is `<div class="editorial share">`)
+ * so nothing here bleeds into the other cream pages. The report card is
+ * FRAMED, never restyled — DnaReport is shared with /dashboard/report/[id]
+ * and its adaptive light/dark card must keep working on top of the plate.
+ *
+ * The plate itself is graded from the creator's own palette in
+ * `src/lib/share-plate.ts` and arrives as an inline background, so each
+ * shared report reads as bespoke rather than templated.
+ *
+ * ⚠ §0.1: write UNPREFIXED backdrop-filter ONLY. A hand-written
+ * -webkit-backdrop-filter suppresses the unprefixed property in this
+ * Lightning CSS pipeline and kills the blur in Chrome/Firefox.
+ * ════════════════════════════════════════════════════════════════ */
+.share .share-main { flex: 1; display: flex; flex-direction: column; }
+
+/* ── The graded field ──
+ * Full-bleed and run up under the fixed glass nav on purpose: the nav then
+ * reads as tinted glass over the creator's colour, the way it floats over
+ * the landing hero. Top padding lives on the plate, not on `.share-main`.
+ *
+ * ⚠ The Instagram specimen is a 4:5 portrait crop of this page, and the top
+ * padding below is what positions it. Start the crop ~90px down — BELOW the
+ * fixed nav, just above the lab strip — never from the top of the page. A
+ * top-anchored crop drags the Æ monogram and the "Join today" pill into the
+ * frame, and a CTA baked into a specimen reads as an ad, which is the wrong
+ * signal for the feed.
+ *
+ * At 390px wide the crop is 488px tall (w x 5/4) and spans y 90–578: lab
+ * strip (96), hairline (133), frame edge (164), card (175), "Curated for
+ * @handle" (236), archetype (260–350), signature (358–412), then card body
+ * to the cut. If you change the padding below, re-measure that span. */
+.share .share-plate {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(96px, 12vh, 132px) var(--pad) clamp(56px, 8vh, 96px);
+}
+
+/* Slow drift over the plate — desktop only, and only when motion is welcome
+ * (gates live in the media query below, so this is static by default). */
+.share .share-drift {
+  position: absolute;
+  z-index: 0;
+  width: 58vw;
+  height: 58vw;
+  top: -14vw;
+  right: -12vw;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.32;
+  pointer-events: none;
+}
+
+/* Vignette + film grain in one layer, so the card reads as lifted off a
+ * textured plate rather than floating in a flat wash. */
+.share .share-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.share .share-plate::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  box-shadow: inset 0 0 clamp(90px, 15vw, 210px) rgba(0, 0, 0, 0.5);
+}
+
+.share .share-plate-inner { position: relative; z-index: 2; }
+
+/* ── Lab furniture ──
+ * A gallery placard, not a dashboard: plate label, date, specimen id, rule.
+ * Amber is the only accent and it is spent on the specimen id alone. */
+.share .share-lab {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px 24px;
+  flex-wrap: wrap;
+  width: 100%;
+  max-width: 44rem;
+  margin: 0 auto 13px;
+}
+.share .share-lab-side { display: flex; align-items: baseline; gap: 12px; }
+.share .share-lab-mark { font-family: var(--serif); font-size: 17px; letter-spacing: 0.01em; color: rgba(255, 255, 255, 0.92); }
+.share .share-lab-dot { color: rgba(255, 255, 255, 0.28); }
+.share .share-lab-meta { font-family: var(--sans); font-size: 10.5px; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: rgba(255, 255, 255, 0.5); }
+.share .share-lab-id { font-family: var(--sans); font-size: 10.5px; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; color: var(--amber); white-space: nowrap; }
+.share .share-lab-rule { width: 100%; max-width: 44rem; height: 1px; margin: 0 auto clamp(22px, 3.5vh, 34px); background: rgba(255, 255, 255, 0.16); }
+
+/* ── The glass frame ──
+ * Frames DnaReport; never reaches inside it. The hairline stroke and drop
+ * shadow are what guarantee the card separates from the plate whichever
+ * theme it flips to (§4.6). */
+.share .share-frame {
+  position: relative;
+  width: 100%;
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: clamp(12px, 2.2vw, 26px);
+  border-radius: clamp(22px, 3vw, 32px);
+  background: var(--glass-fill);
+  backdrop-filter: blur(24px) saturate(1.5);
+  border: 1px solid var(--glass-stroke);
+  box-shadow: 0 44px 90px -32px rgba(0, 0, 0, 0.62), 0 3px 12px rgba(0, 0, 0, 0.22);
+}
+.share .share-frame::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+/* The card is a dark-studio component; re-establish its light text
+ * inheritance so the elements that rely on the dark theme's foreground
+ * (the export buttons below the card) don't fall back to editorial ink. */
+.share .share-report { position: relative; color: var(--foreground); }
+
+/* Withdrawn-profile notice, on the neutral plate */
+.share .share-frame--notice { padding: clamp(30px, 5vw, 48px); text-align: center; }
+.share .share-notice-title { font-family: var(--serif); font-size: clamp(24px, 3.2vw, 34px); font-weight: 400; font-style: italic; line-height: 1.15; letter-spacing: -0.015em; color: var(--ink); }
+.share .share-notice-body { margin-top: 12px; font-size: 14.5px; line-height: 1.7; color: var(--ink-mid); }
+
+/* ── Coda ──
+ * The DM promise is "no pitch", so a responding creator must not hit a sales
+ * wall here. One quiet line home is the ceiling. */
+.share .share-coda { text-align: center; padding: clamp(26px, 4vh, 38px) 24px clamp(32px, 5vh, 48px); font-size: 13px; letter-spacing: 0.04em; color: var(--ink-mid); }
+.share .share-coda-link { color: var(--prussian); border-bottom: 1px solid var(--prussian); padding-bottom: 1px; transition: opacity 0.2s; }
+.share .share-coda-link:hover { opacity: 0.55; }
+
+/* ── Neutral fallback plate (no palette) ──
+ * A cream-graded field, so the furniture has to flip back to ink. */
+.share .share-plate[data-neutral] .share-lab-mark { color: var(--ink); }
+.share .share-plate[data-neutral] .share-lab-dot { color: var(--ink-low); }
+.share .share-plate[data-neutral] .share-lab-meta { color: var(--ink-mid); }
+.share .share-plate[data-neutral] .share-lab-rule { background: var(--rule); }
+.share .share-plate[data-neutral] .share-veil { mix-blend-mode: multiply; opacity: 0.045; }
+.share .share-plate[data-neutral]::after { box-shadow: inset 0 0 clamp(90px, 15vw, 210px) rgba(17, 17, 16, 0.09); }
+.share .share-plate[data-neutral] .share-frame { box-shadow: 0 30px 70px -30px rgba(30, 58, 95, 0.4), 0 2px 10px rgba(17, 17, 16, 0.07); }
+
+/* ── Phone (≤560px) — the priority viewport, opened from a DM ── */
+@media (max-width: 560px) {
+  .share .share-plate { padding: 96px 16px 44px; }
+  .share .share-frame { padding: 10px; border-radius: 20px; }
+  .share .share-lab { gap: 8px 16px; }
+  .share .share-lab-mark { font-size: 15px; }
+  .share .share-lab-meta, .share .share-lab-id { font-size: 9.5px; letter-spacing: 0.16em; }
+
+  /* Lighter blur for smoother scrolling on phones */
+  .share .share-frame { backdrop-filter: blur(12px) saturate(1.4); }
+  .share .share-drift { filter: blur(60px); }
+
+  /* Tap target ≥ 44px */
+  .share .share-coda-link { display: inline-flex; align-items: center; min-height: 44px; }
+}
+
+/* Motion: drift only where a pointer hovers (desktop) and motion is welcome */
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .share .share-drift { animation: drift 34s ease-in-out infinite; }
 }
