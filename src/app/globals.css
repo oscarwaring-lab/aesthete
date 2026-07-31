@@ -1245,3 +1245,290 @@ html { scroll-behavior: smooth; }
 @media (hover: hover) and (prefers-reduced-motion: no-preference) {
   .share .share-drift { animation: drift 34s ease-in-out infinite; }
 }
+
+/* ════════════════════════════════════════════════════════════════
+ * DNA REPORT — the evidence spread
+ * Scoped under `.dna`, which sits on the card root beside the
+ * `data-theme` that flips the --card-* tokens.
+ *
+ * Deliberately NOT scoped to a page zone. This one card renders
+ * inside the cream `.share` plate AND inside the dark `.studio`
+ * dashboard, so every rule here has to hold on both fields and in
+ * both card themes. That is why colour is expressed only in --card-*
+ * tokens (plus the fixed amber, which is identical in both modes) —
+ * never in --ink/--cream, which exist on cream pages only, nor
+ * --foreground, which is the studio's.
+ *
+ * Legacy (v1/v2, no usable evidence) reports render a different
+ * subtree that carries none of these `dna-*` classes, so nothing in
+ * this block can reach them. That is what keeps the §4 fallback
+ * identical to what five real creators were already sent.
+ *
+ * ⚠ §0.1: write UNPREFIXED backdrop-filter ONLY. A hand-written
+ * -webkit-backdrop-filter suppresses the unprefixed property in this
+ * Lightning CSS pipeline and kills the blur in Chrome/Firefox.
+ * ════════════════════════════════════════════════════════════════ */
+
+/* ── The signature, promoted ──
+ * On an evidence report this is the billboard: the one curated
+ * sentence, and the largest *statement* on the card. It stays under
+ * the archetype, which is a name rather than a claim, and well over
+ * the per-plate reasoning, which must not compete with it. */
+.dna .dna-signature {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(20px, 4.4vw, 27px);
+  line-height: 1.34;
+  letter-spacing: -0.01em;
+  color: rgba(var(--card-text-rgb), 0.86);
+  max-width: 32ch;
+  margin-top: 14px;
+}
+
+.dna .dna-body {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(30px, 5vw, 46px);
+  padding: clamp(26px, 4.4vw, 36px) clamp(20px, 3.4vw, 32px) clamp(26px, 4vw, 32px);
+}
+
+/* ── Lab tag: numeral · rule · dimension ──
+ * The same three pieces as the landing's section rails
+ * (`.landing .plate-tag`), restated in --card-* so it survives the
+ * light/dark flip. Amber is spent on the numeral alone. */
+.dna .dna-tag { display: flex; align-items: baseline; gap: 12px; margin-bottom: 14px; }
+.dna .dna-tag-no { font-family: var(--serif); font-style: italic; font-size: 14px; color: var(--dna-amber); white-space: nowrap; }
+.dna .dna-tag-rule { flex: 0 0 34px; height: 1px; background: rgba(var(--card-text-rgb), 0.18); }
+/* --card-muted would be the obvious colour here and is what the rest of
+ * the card uses, but in light mode it is rgba(ink, 0.5) — 3.5:1, under AA
+ * — and these are 10px uppercase labels. The supporting text in this
+ * block therefore sets its own alpha: still clearly subordinate to the
+ * reasoning at 0.82, but over 4.5:1 in both themes. (The shared --card-*
+ * token is left alone deliberately: changing it would move every legacy
+ * v2 report too, and those have to keep rendering what was already sent.) */
+.dna .dna-tag-meta { font-family: var(--sans); font-size: 10px; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: rgba(var(--card-text-rgb), 0.64); }
+
+/* ── The spread ──
+ * Asymmetric on purpose (44/56, alternating) so three plates read as
+ * a gallery hang rather than a table of rows. The cited frames keep
+ * their own aspect ratios, which is the other half of that: no two
+ * plates come out the same height. */
+.dna .dna-spread { display: flex; flex-direction: column; gap: clamp(32px, 5vw, 50px); }
+
+/* Placed by named area, never by source order: the DOM is always tag →
+   frame → note (the phone's reading order), and the areas below move the
+   tag up beside the frame once there are two columns to put it in. The
+   frame spans both rows, so its top edge stays level with the tag's. */
+.dna .dna-plate {
+  display: grid;
+  grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.12fr);
+  grid-template-rows: auto 1fr;
+  grid-template-areas:
+    "figure tag"
+    "figure body";
+  align-items: start;
+  gap: 12px clamp(16px, 3vw, 28px);
+}
+.dna .dna-plate[data-side="right"] {
+  grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr);
+  grid-template-areas:
+    "tag figure"
+    "body figure";
+}
+.dna .dna-plate > .dna-tag { grid-area: tag; margin-bottom: 0; }
+.dna .dna-plate > .dna-plate-figure { grid-area: figure; }
+.dna .dna-plate > .dna-plate-body { grid-area: body; }
+
+/* ── The cited frame ──
+ * `height: auto` is what keeps this a photograph at its real aspect
+ * rather than a thumbnail; `min-width: 0` on the grid child is what
+ * stops it forcing its column open (the §6 clip). */
+.dna .dna-plate-figure {
+  position: relative;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  border-radius: 14px;
+  background: rgba(var(--card-text-rgb), 0.04);
+  box-shadow: 0 18px 40px -24px rgba(0, 0, 0, 0.55);
+}
+.dna .dna-plate-img { display: block; width: 100%; height: auto; }
+/* Hairline over the image, not under it — an inset shadow on the
+   figure itself would paint beneath the <img> and never be seen. */
+.dna .dna-plate-figure::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 1px rgba(var(--card-text-rgb), 0.12);
+}
+
+/* ── Frame chip ──
+ * The card's one glass panel, and it sits on a photograph rather
+ * than under body copy — which is the §3 legibility rule exactly:
+ * depth around content, never through it. The dark fill carries the
+ * contrast on its own (so the chip is legible over a blown-out sky,
+ * and survives the export path, which cannot rasterise a blur); the
+ * blur only supplies the depth. Fixed dark in both card themes,
+ * because what is behind it is the creator's photograph, not the
+ * card. Ties each claim to a numbered cell in the contact sheet. */
+.dna .dna-frame-chip {
+  position: absolute;
+  left: 9px;
+  bottom: 9px;
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: rgba(10, 10, 12, 0.55);
+  backdrop-filter: blur(14px) saturate(1.4);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.94);
+}
+
+.dna .dna-plate-body { min-width: 0; padding-top: clamp(0px, 0.8vw, 6px); }
+
+/* ── The reasoning ──
+ * Annotation register (§3): a considered note beside the frame, not a
+ * pull-quote. Sizing is the hierarchy call — set large, it would put
+ * the weaker second sentence on a billboard, so it stays at reading
+ * size and lets the sharp first sentence land first. */
+.dna .dna-reasoning {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.68;
+  color: rgba(var(--card-text-rgb), 0.82);
+}
+
+.dna .dna-plate-data { margin-top: 18px; }
+
+/* The dimension's own codified prose — supporting detail under the
+   claim, quieter than the reasoning that earned its place above. */
+.dna .dna-plate-note {
+  margin-top: 14px;
+  font-family: var(--sans);
+  font-size: 13px;
+  line-height: 1.65;
+  color: rgba(var(--card-text-rgb), 0.64);
+}
+/* On a degraded dimension there is no reasoning above it, so the
+   description leads instead and takes that weight. */
+.dna .dna-plate-note--lead { margin-top: 0; margin-bottom: 18px; font-size: 14px; }
+.dna .dna-plate-note--lead + .dna-plate-data { margin-top: 0; }
+
+/* ── Palette ──
+ * The rail is the colour hit, the list is the data. Splitting them
+ * lets the swatches stay legible (hex AND name) inside a plate column
+ * roughly half the card wide, where the old 64px tiles could not. */
+.dna .dna-rail {
+  display: flex;
+  height: 40px;
+  overflow: hidden;
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px rgba(var(--card-text-rgb), 0.1);
+}
+.dna .dna-rail span { flex: 1 1 0; min-width: 0; }
+.dna .dna-swatches {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+  gap: 7px 16px;
+}
+.dna .dna-swatch { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.dna .dna-swatch i { flex: 0 0 auto; width: 9px; height: 9px; border-radius: 2px; box-shadow: inset 0 0 0 1px rgba(var(--card-text-rgb), 0.16); }
+.dna .dna-swatch b { font-family: var(--font-geist-mono), ui-monospace, monospace; font-size: 10.5px; font-weight: 400; text-transform: uppercase; color: rgba(var(--card-text-rgb), 0.75); }
+.dna .dna-swatch em { min-width: 0; font-style: normal; font-size: 11px; color: rgba(var(--card-text-rgb), 0.64); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ── Codified reference ──
+ * Everything the report knows, kept whole but placed after the story
+ * it belongs to. The rule is the seam between the two. */
+.dna .dna-rule { margin: 0; border: 0; border-top: 1px solid rgba(var(--card-text-rgb), 0.09); }
+.dna .dna-reference { display: flex; flex-direction: column; gap: clamp(26px, 4vw, 34px); }
+
+/* ── Contact sheet ──
+ * Every stored frame, numbered to match the plate chips, with the
+ * cited three ringed in amber so a claim can be traced back to the
+ * photograph it came from. `auto-fill` tracks mean eleven frames wrap
+ * instead of overflowing, at any width. */
+.dna .dna-contact-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(58px, 1fr));
+  gap: clamp(7px, 1.4vw, 10px);
+}
+.dna .dna-contact-cell { margin: 0; min-width: 0; }
+.dna .dna-contact-thumb {
+  position: relative;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 6px;
+  background: rgba(var(--card-text-rgb), 0.05);
+  opacity: 0.86;
+  transition: opacity 0.25s ease;
+}
+.dna .dna-contact-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.dna .dna-contact-thumb:hover { opacity: 1; }
+.dna .dna-contact-cell[data-cited] .dna-contact-thumb { opacity: 1; box-shadow: 0 0 0 1.5px rgba(196, 147, 58, 0.85); }
+.dna .dna-contact-no {
+  display: block;
+  margin-top: 5px;
+  text-align: center;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  color: rgba(var(--card-text-rgb), 0.64);
+}
+/* A cited cell is marked three ways — the amber ring, full opacity, and a
+ * heavier numeral — so the mark never rests on colour alone. The numeral
+ * itself deliberately stays ink: amber is fixed across both card themes by
+ * design, and amber text on the cream card is only 2.5:1, which is too
+ * little for a 9px number whose whole job is to be read. */
+.dna .dna-contact-cell[data-cited] .dna-contact-no { font-weight: 600; color: rgba(var(--card-text-rgb), 0.82); }
+
+/* ── Phone (≤560px) — the priority viewport, opened from a DM ── */
+@media (max-width: 560px) {
+  /* Single column, source order: label, frame, note. The alternation has
+     nothing to alternate across, so both sides collapse to the same stack. */
+  .dna .dna-plate,
+  .dna .dna-plate[data-side="right"] {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto auto;
+    grid-template-areas: "tag" "figure" "body";
+    gap: 10px;
+  }
+  .dna .dna-plate-body { padding-top: 4px; }
+
+  /* ⚠ Instagram specimen crop (§6). The 4:5 portrait capture of the share
+     page starts ~90px down and, at 390px wide, ends at y 578 — see the
+     crop note in the `.share .share-plate` block. These two paddings are
+     the only slack between the header and the first plate, so they decide
+     how much of Plate I lands inside that frame; tightened here from
+     28/26 to buy the plate's label room above the cut.
+
+     Measured on the @codybryce_ report at 390px: lab strip 96, hairline
+     133, card 177, curated-for 214, archetype 262–352, signature 366–420,
+     summary 432–523, "Plate I · Colour" 557–578, frame from 588. The cut
+     lands on the plate label, so the specimen ends by announcing the
+     spread rather than on a meaningless sliver of photograph — and
+     nothing is sliced mid-element. Where exactly it falls depends on how
+     that creator's archetype and summary wrap, so re-measure rather than
+     trusting these numbers after any type change above. */
+  .dna .dna-header { padding-bottom: 16px; }
+  .dna .dna-body { padding-top: 18px; }
+
+  /* Lighter blur for smoother scrolling on phones */
+  .dna .dna-frame-chip { backdrop-filter: blur(8px) saturate(1.3); }
+
+  .dna .dna-swatches { grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); }
+  .dna .dna-contact-grid { grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dna .dna-contact-thumb { transition: none; }
+}
