@@ -88,9 +88,146 @@ will cost tokens and reproduce the same answer.
 It earns a version so a row's register can be read off `prompt_version` without
 opening the JSON.
 
+# Instagram connection and post ingest (shipped 2026-08-01)
+
+Foundation for the correlation test in `Aesthete-Product-Direction-v1.md`: get a
+creator's real post outcomes sitting next to the aesthetic we already score.
+**Connect + ingest + store only.** Nothing here computes or shows an analytic,
+and it should stay that way until the DNA-consistency ↔ conversion correlation
+has actually been measured. The dashboard card reports counts of what we hold,
+never how the account is doing.
+
+Migration `009_instagram_ingest.sql`. Code in `src/lib/instagram/`, routes under
+`src/app/api/instagram/`.
+
+## The three tables
+
+- **`instagram_connections`** — one row per connected account, unique on
+  `(user_id, ig_user_id)`, so reconnecting updates in place instead of leaving a
+  trail of dead tokens. `profile_id` optionally ties the account to the
+  `aesthetic_profiles` row whose DNA it should be scored against; it is
+  `ON DELETE SET NULL`, so deleting a profile never takes the harvested metrics
+  with it.
+- **`post_metrics`** — one row per media item, upserted on
+  `(ig_connection_id, ig_media_id)`. A post's insights keep moving for days
+  after publication, so a re-sync must refresh in place; that is the whole
+  reason for the natural key.
+- **`account_metrics`** — daily series, upserted on `(ig_connection_id, date)`,
+  for the things Instagram exposes only at account level.
+
+**Every metric column is nullable on purpose.** A metric Instagram declined for
+a given post is stored as NULL, and NULL is a different fact from a real zero.
+Any analysis built on this table has to keep them distinct or it will read
+"absent" as "nobody saved this".
+
+`post_metrics.image_urls` holds the *scorable* frames in order — the image for
+`IMAGE`, the poster frame for `VIDEO`/`REELS`, every child for a
+`CAROUSEL_ALBUM`. That mapping is resolved once at ingest (`scorableImageUrls`
+in `src/lib/instagram/api.ts`) so the eventual scorer never has to re-derive
+which field is an image for which media type — `media_url` on a Reel is an
+`.mp4`, and handing that to a vision model fails on every video post.
+**These are Instagram CDN URLs and they expire in days.** Anything that needs
+them durably must copy the bytes into our own storage, the way
+`uploadSourceImages` already does for uploaded frames.
+
+## Token security
+
+Two independent barriers, so both have to fail before a token leaks.
+
+1. **Encrypted at rest.** AES-256-GCM in `src/lib/instagram/token-cipher.ts`,
+   key from `INSTAGRAM_TOKEN_ENCRYPTION_KEY` (32 bytes, base64). Stored as
+   `v1.<iv>.<tag>.<ciphertext>`. GCM rather than CBC because tampering must be
+   *detected* — a modified blob throws instead of decrypting to garbage we would
+   then send to Instagram. The AAD is bound to `ig_user_id`, so a ciphertext
+   moved to another row fails its auth tag rather than silently authorising the
+   wrong account. **Rotating the key invalidates every stored token** and forces
+   every creator to reconnect; treat it as permanent per environment.
+2. **Unreadable by the client.** `authenticated` holds a **column-level** SELECT
+   grant on `instagram_connections` that omits `access_token` entirely — so even
+   the row's own owner cannot read the ciphertext with the anon key. Only
+   `service_role` can. `anon` has no privilege on any of the three tables.
+
+The consequence is intentional and will bite you if you don't know it:
+**`select('*')` on `instagram_connections` from a browser client fails** with
+`permission denied for column access_token`. Client-side reads must name their
+columns (see the query in `src/app/dashboard/page.tsx`). Server code that needs
+the token uses the service-role client.
+
+Everything logged goes through `redactSecrets` (`src/lib/instagram/redact.ts`)
+first. This is enforced at the logging boundary rather than left to discipline
+at each call site, because the single most useful diagnostic in an OAuth
+integration — the request URL — carries `access_token` and `client_secret` in
+its query string, and a token in a Vercel log is a token in far more places than
+the database ever was.
+
+RLS was verified per table by executing cross-user SELECTs as each of two real
+`auth.users` under `set local role authenticated`: each user sees only their own
+row in all three tables, the token column is refused to its own owner, `anon`
+gets nothing, and `authenticated` cannot INSERT into any of them. Verify it the
+same way after touching these policies — a missing policy is not surfaced as an
+error, it just quietly returns everything or nothing.
+
+## What the API will and will not give us
+
+These are limits of Meta's API, not gaps in the implementation. Do not paper
+over any of them with a derived number that looks like the real thing.
+
+- **"Follows from this post" does not exist.** There is no per-post follow
+  attribution in the API at all. The conversion proxy is **saves**, and later
+  reach-normalised saves. Do not synthesise a per-post follow count from
+  `follows_and_unfollows`; that metric is account-level and daily.
+- **Link clicks are account-level only.** Stored as a daily series in
+  `account_metrics.link_clicks`, never attributed to a post. Meta renamed
+  `website_clicks` to `profile_links_taps` and which name an account answers to
+  depends on its backend, so both are tried in order.
+- **`impressions` is deprecated in favour of `views`** (all versions, from
+  2025-04-21). `post_metrics` keeps one value column plus
+  `impressions_or_views_metric` recording *which* metric produced it. Mixing the
+  two silently would corrupt any reach-normalised comparison, which is exactly
+  what this table exists to support.
+- **`followers_count` is a running total, not an insight.** The daily
+  `follower_count` *metric* is new follows per day — a different quantity. The
+  total is read once per sync from `/me` and stamped on that day's row only;
+  earlier days keep NULL rather than inventing history we never observed.
+- **Some metrics are refused below 100 followers**, which is squarely inside our
+  1–50k ICP's lower end. Those posts get NULLs, not zeros.
+- **Account insight windows cap at 30 days** per call (`ACCOUNT_INSIGHT_DAYS`).
+
+Because the catalogue moves, **every read degrades rather than demanding a
+perfect field list**: media fields and insight metrics each have ordered tiers
+in `src/lib/instagram/api.ts`, tried richest-first. A client that insists on the
+ideal set gets a 400 and ingests nothing.
+
+Also worth knowing: this is the Instagram API with **Instagram** Login
+(`graph.instagram.com`, scopes `instagram_business_basic` +
+`instagram_business_manage_insights`), *not* the Facebook Login flavour
+(`graph.facebook.com`, a linked Page, `instagram_basic`). Mixing the two is the
+most common way to get an inexplicable `OAuthException`. Note also that the code
+exchange is on `api.instagram.com` while the token exchange and all reads are on
+`graph.instagram.com`.
+
+## Env
+
+`INSTAGRAM_APP_ID`, `INSTAGRAM_APP_SECRET`, `INSTAGRAM_REDIRECT_URI`,
+`INSTAGRAM_TOKEN_ENCRYPTION_KEY`. The redirect URI must match the Meta app's
+registered value byte-for-byte — a trailing slash or an http/https mismatch is
+rejected — and the same value must be sent again on the token exchange.
+
 # Deferred
 
 Known and deliberately not done. None are urgent; none are quick.
+
+- **Nothing refreshes tokens on a schedule.** `ingestConnection` refreshes
+  opportunistically when it runs inside `TOKEN_REFRESH_AFTER_DAYS` of expiry,
+  which only helps an account that is being synced. A long-lived token cannot be
+  renewed once it has lapsed — the creator has to reconnect — so a creator who
+  connects and is never synced again silently expires at 60 days. Needs a cron.
+- **Nothing syncs on a cadence.** `POST /api/instagram/sync` exists and is
+  correct, but only a human pressing "Sync now" calls it.
+- **Ingested posts are not DNA-scored yet.** `post_metrics.image_urls` is
+  populated and ordered for exactly that purpose; nothing consumes it. This is
+  the join the whole correlation test needs, and it has to contend with those
+  CDN URLs expiring.
 
 - **Vary the "You… / This…" cadence in evidence reasoning.** The repetition is
   caused by the two-sentence structural rule — the same rule that holds the voice

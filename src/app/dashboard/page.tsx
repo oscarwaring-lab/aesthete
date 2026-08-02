@@ -4,6 +4,11 @@ import { UpgradeSuccessBanner } from '@/components/UpgradeSuccessBanner'
 import { DashboardShell } from '@/components/DashboardShell'
 import { StudioStats } from '@/components/StudioStats'
 import { ProfileGrid, type ProfileRow } from '@/components/ProfileGrid'
+import {
+  InstagramConnectCard,
+  type InstagramConnectionSummary,
+} from '@/components/InstagramConnectCard'
+import { isInstagramConfigured } from '@/lib/instagram/config'
 
 type Subscription = {
   tier: string
@@ -36,13 +41,17 @@ function computeGlows(doms: string[]): [string, string][] {
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ upgraded?: string }>
+  searchParams: Promise<{ upgraded?: string; instagram?: string }>
 }) {
   const supabase = await createClient()
 
   // RLS scopes every query to the signed-in user.
-  const [{ data: profiles }, { data: subscriptionRow }, { count: checkCountRaw }] =
-    await Promise.all([
+  const [
+    { data: profiles },
+    { data: subscriptionRow },
+    { count: checkCountRaw },
+    { data: connectionRow },
+  ] = await Promise.all([
       supabase
         .from('aesthetic_profiles')
         .select(
@@ -56,6 +65,19 @@ export default async function DashboardPage({
         .maybeSingle(),
       // Total continuity checks logged by this user (spec §6).
       supabase.from('continuity_checks').select('*', { count: 'exact', head: true }),
+      // The connected Instagram account, if any.
+      //
+      // The columns are named EXPLICITLY and access_token is not among them.
+      // That is not merely tidy: `authenticated` holds a column-level grant that
+      // omits access_token (009_instagram_ingest.sql), so `select('*')` here
+      // would fail outright with "permission denied for column access_token".
+      // The token is only ever read by server code holding the service role.
+      supabase
+        .from('instagram_connections')
+        .select('id, ig_username, connected_at, last_synced_at')
+        .order('connected_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
     ])
 
   const rows = (profiles ?? []) as ProfileRow[]
@@ -130,7 +152,25 @@ export default async function DashboardPage({
   //   subscription.tier === 'free' && subscription.analyses_used >= 1
   const showUpgradePrompt = false
 
-  const { upgraded } = await searchParams
+  // How much of their feed we hold. A count, not an analytic — this feature is
+  // connect + ingest only for now. RLS on post_metrics resolves ownership
+  // through the connection, so this can only ever count the user's own rows.
+  let instagramConnection: InstagramConnectionSummary | null = null
+  if (connectionRow) {
+    const { count: postCount } = await supabase
+      .from('post_metrics')
+      .select('id', { count: 'exact', head: true })
+      .eq('ig_connection_id', connectionRow.id)
+
+    instagramConnection = {
+      username: connectionRow.ig_username,
+      connectedAt: connectionRow.connected_at,
+      lastSyncedAt: connectionRow.last_synced_at,
+      postCount: postCount ?? 0,
+    }
+  }
+
+  const { upgraded, instagram: instagramStatus } = await searchParams
   const available = Math.max(
     subscription.analyses_limit - subscription.analyses_used,
     0
@@ -193,6 +233,15 @@ export default async function DashboardPage({
           avgConsistency={avgConsistency}
           checkCount={checkCount}
           glows={glows}
+        />
+
+        {/* ─── Instagram connection ────────────────────────────── */}
+        {/* `configured` is resolved on the server so no Instagram env var is
+            ever referenced from a Client Component. */}
+        <InstagramConnectCard
+          connection={instagramConnection}
+          configured={isInstagramConfigured()}
+          status={instagramStatus}
         />
 
         {/* ─── Toolbar + specimen grid ─────────────────────────── */}
