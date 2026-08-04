@@ -578,6 +578,17 @@ html { scroll-behavior: smooth; }
 .landing .spec-card .curated { margin-top: 8px; }
 .landing .spec-card .score { font-family: var(--serif); font-size: 40px; color: var(--amber); line-height: 1; text-align: right; }
 .landing .spec-card .score small { display: block; font-family: var(--sans); font-size: 9px; letter-spacing: 0.2em; color: var(--ink-40); margin-top: 6px; }
+/* Instagram-profile mockup behind the specimen card — the "feed" being read. */
+.landing .spec-feed { position: absolute; top: 50%; left: 50%; width: min(420px, 92%); transform: translate(-53%, -62%) rotate(2.6deg); z-index: 0; padding: 20px 20px 16px; border-radius: 24px; background: rgba(255, 255, 255, 0.62); backdrop-filter: blur(9px); border: 1px solid var(--glass-stroke); box-shadow: 0 44px 84px -42px rgba(17, 17, 16, 0.42); opacity: 0.9; }
+.landing .sf-top { display: flex; align-items: center; gap: 14px; }
+.landing .sf-avatar { width: 52px; height: 52px; border-radius: 50%; background-size: cover; background-position: center; flex: none; box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.75), 0 0 0 3px rgba(196, 147, 58, 0.35); }
+.landing .sf-info { flex: 1; min-width: 0; }
+.landing .sf-handle { font-family: var(--serif); font-size: 16px; color: var(--ink); }
+.landing .sf-stats { display: flex; gap: 12px; margin-top: 5px; font-size: 9.5px; color: var(--ink-50); }
+.landing .sf-stats b { font-weight: 600; color: var(--ink); }
+.landing .sf-bio { font-size: 10.5px; color: var(--ink-60); margin: 10px 0 12px; letter-spacing: 0.02em; }
+.landing .sf-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.landing .sf-cell { aspect-ratio: 1; border-radius: 4px; background-size: cover; background-position: center; background-color: var(--cream-2); }
 .landing .spec-bands { display: flex; height: 56px; border-radius: 8px; overflow: hidden; margin: 6px 0 20px; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4); }
 .landing .spec-bands span { flex: 1; transition: flex 0.5s; }
 .landing .spec-bands:hover span { flex: 0.6; }
@@ -841,6 +852,7 @@ html { scroll-behavior: smooth; }
   /* Hide the hero's floating chips (they overhang at these widths; the card
      already shows the archetype + score). */
   .landing .chip { display: none; }
+  .landing .spec-feed { display: none; }
 
   /* Report plate: roomier card, less letterboxing */
   .landing .demo-field { min-height: 340px; padding: 22px; }

@@ -1,5 +1,21 @@
 import Link from 'next/link'
 
+// Warm, golden-hour sample frames for the hero's Instagram-profile mockup that
+// sits behind the specimen card (decorative — it shows the "feed" being read).
+const FEED_IDS = [
+  'photo-1780545311196-f8b507b08b94',
+  'photo-1782229296900-2511950b8fda',
+  'photo-1779804597877-63adc699f00b',
+  'photo-1782582309438-fc97879e2c25',
+  'photo-1784151439761-fa91c2f664fc',
+  'photo-1777579173763-b7539bf1ed37',
+  'photo-1783201033538-85c76cf0ba05',
+  'photo-1780963542357-038555963e92',
+  'photo-1783431286496-e8032a0f7997',
+]
+const feedSrc = (id: string, w = 220) =>
+  `https://images.unsplash.com/${id}?auto=format&fit=crop&crop=faces,edges&q=70&w=${w}`
+
 /**
  * Hero — drifting colour meshes behind a rotated glass "specimen" card, with
  * floating chips and a count-up consistency score. The cursor-tilt and the
@@ -39,6 +55,38 @@ export function Hero() {
       </div>
 
       <div className="specimen-stage reveal d3">
+        <div className="spec-feed" aria-hidden="true">
+          <div className="sf-top">
+            <span
+              className="sf-avatar"
+              style={{ backgroundImage: `url(${feedSrc('photo-1783431286496-e8032a0f7997', 120)})` }}
+            />
+            <div className="sf-info">
+              <div className="sf-handle">@....</div>
+              <div className="sf-stats">
+                <span>
+                  <b>128</b> posts
+                </span>
+                <span>
+                  <b>8,420</b> followers
+                </span>
+                <span>
+                  <b>326</b> following
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="sf-bio">Golden hours · film · sun-chasing</div>
+          <div className="sf-grid">
+            {FEED_IDS.map((id) => (
+              <span
+                key={id}
+                className="sf-cell"
+                style={{ backgroundImage: `url(${feedSrc(id)})` }}
+              />
+            ))}
+          </div>
+        </div>
         <div className="chip chip-1">
           <i style={{ background: 'var(--dna-sage)' }} /> Sunset Wanderlust
         </div>
