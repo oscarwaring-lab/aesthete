@@ -1,7 +1,8 @@
 'use client'
 
+import Image from 'next/image'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { ARCHETYPES } from '@/lib/landing-archetypes'
+import { ARCHETYPES, unsplashSrc } from '@/lib/landing-archetypes'
 
 const DWELL = 5200
 
@@ -85,6 +86,19 @@ export function ArchetypeGallery() {
       <div className="arch-stage">
         {ARCHETYPES.map((a, i) => (
           <div className={'arch-slide' + (i === idx ? ' active' : '')} key={a.name}>
+            {a.photo && (
+              <div className="arch-photo">
+                <Image
+                  src={unsplashSrc(a.photo.id)}
+                  alt={a.photo.alt}
+                  fill
+                  sizes="(max-width: 900px) 100vw, 1160px"
+                  className="arch-photo-img"
+                  style={a.photo.pos ? { objectPosition: a.photo.pos } : undefined}
+                  priority={i === 0}
+                />
+              </div>
+            )}
             <div className="arch-field" style={{ background: a.grade }} />
             <div className="arch-frame" />
             <div className="meta arch-tagtop">
@@ -113,6 +127,9 @@ export function ArchetypeGallery() {
                 </b>
               </div>
             </div>
+            {a.photo && (
+              <span className="arch-credit">Photo by {a.photo.by}</span>
+            )}
           </div>
         ))}
         <div className="arch-progress">
@@ -140,9 +157,9 @@ export function ArchetypeGallery() {
       </div>
 
       <p className="arch-note">
-        Each panel is generated from an extracted colour grade and its
-        five-colour palette. Real photography drops into this frame once a
-        featured creator has cleared it.
+        Each panel pairs a licensed sample photograph with an extracted colour
+        grade and its five-colour palette, graded to the house look. Real
+        creator work replaces these frames as features clear.
       </p>
     </section>
   )

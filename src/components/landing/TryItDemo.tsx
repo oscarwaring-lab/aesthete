@@ -1,7 +1,11 @@
 'use client'
 
+import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
-import { ARCHETYPES, DEMO_SAMPLES } from '@/lib/landing-archetypes'
+import { ARCHETYPES, DEMO_SAMPLES, unsplashSrc } from '@/lib/landing-archetypes'
+
+/** Stage-tile indices that hold the four photographs; the rest stay grades. */
+const PHOTO_SLOTS = [0, 2, 5, 7]
 
 /** Count an element's text from 0 → `to` over `dur` ms. */
 function countTo(el: HTMLElement, to: number, dur: number) {
@@ -146,9 +150,15 @@ export function TryItDemo() {
                 onClick={() => pick(i)}
               >
                 <div className="tiles">
-                  {s.tiles.slice(0, 4).map((t, j) => (
-                    <i key={j} style={{ background: t }} />
-                  ))}
+                  {s.photos
+                    ? s.photos.slice(0, 4).map((id, j) => (
+                        <span className="ph" key={j}>
+                          <Image src={unsplashSrc(id)} alt="" fill sizes="70px" />
+                        </span>
+                      ))
+                    : s.tiles.slice(0, 4).map((t, j) => (
+                        <i key={j} style={{ background: t }} />
+                      ))}
                 </div>
                 <span className="fs-lbl">{s.label}</span>
               </button>
@@ -156,9 +166,26 @@ export function TryItDemo() {
           </div>
           <div className="feed-stage">
             <div className="bigtiles">
-              {DEMO_SAMPLES[sel].tiles.map((t, i) => (
-                <i key={i} style={{ background: t }} />
-              ))}
+              {DEMO_SAMPLES[sel].photos
+                ? DEMO_SAMPLES[sel].tiles.map((t, i) => {
+                    const slot = PHOTO_SLOTS.indexOf(i)
+                    const id = slot >= 0 ? DEMO_SAMPLES[sel].photos![slot] : undefined
+                    return id ? (
+                      <span className="ph" key={i}>
+                        <Image
+                          src={unsplashSrc(id)}
+                          alt=""
+                          fill
+                          sizes="(max-width: 900px) 24vw, 130px"
+                        />
+                      </span>
+                    ) : (
+                      <i key={i} style={{ background: t }} />
+                    )
+                  })
+                : DEMO_SAMPLES[sel].tiles.map((t, i) => (
+                    <i key={i} style={{ background: t }} />
+                  ))}
             </div>
             <div className="scanline" ref={scanRef} />
           </div>
@@ -231,9 +258,14 @@ export function TryItDemo() {
       </div>
 
       <p className="arch-note">
-        Sample feeds are shown as colour grades, not photographs. The reading
-        runs the same schema your uploads do.
+        Sample feeds mix real photographs with colour grades. The reading runs
+        the same schema your uploads do.
       </p>
+      {DEMO_SAMPLES[sel].credits && (
+        <p className="demo-credit">
+          Photography · {DEMO_SAMPLES[sel].credits!.join(', ')}
+        </p>
+      )}
     </section>
   )
 }
